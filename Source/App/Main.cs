@@ -9,6 +9,7 @@ using LevelBuilder.Editor.Grid;
 using LevelBuilder.Editor.Session;
 using LevelBuilder.Editor.Tools;
 using LevelBuilder.Editor.View;
+using LevelBuilder.UI;
 
 namespace LevelBuilder.App;
 
@@ -16,14 +17,18 @@ namespace LevelBuilder.App;
 /// Editor shell root. Builds an in-memory document with one storey, wires up the grid,
 /// camera, cursor, live view, command stack and tools.
 ///
+/// Layout: the 3D world lives in its own <see cref="SubViewport"/> so the docked UI can
+/// shrink the viewport rather than overlap it. The scene-tree panel docks to its left via
+/// an <see cref="HSplitContainer"/>; mouse + keyboard reach the 3D nodes through the
+/// container's input forwarding.
+///
 /// M2: draw floors (F) and walls (W) on the grid; undo/redo with Ctrl+Z / Ctrl+Y.
-/// UI (toolbars/panels) is intentionally last — driven by hotkeys for now.
 /// </summary>
 public partial class Main : Node3D
 {
     public override void _Ready()
     {
-        GD.Print("=== LevelBuilder — editor shell (M2: floor + wall tools) ===");
+        GD.Print("=== LevelBuilder — editor shell (docked scene tree) ===");
 
         LevelDocument doc = NewDocument(out StoreyData storey);
         PrimitiveRegistry registry = PrimitiveRegistry.CreateDefault();
@@ -38,16 +43,37 @@ public partial class Main : Node3D
         var gizmos = new GizmoLayer { Name = "GizmoLayer" };
         var tools = new ToolManager();
 
-        AddChild(grid);
-        AddChild(levelView);
-        AddChild(previewLayer);
-        AddChild(gizmos);
-        AddChild(cursor);     // before ToolManager so HoveredCell/Corner is fresh each frame
-        AddChild(cameraRig);
-        AddChild(picker);
-        AddChild(tools);
-        AddChild(BuildSunLight());
-        AddChild(BuildEnvironment());
+        // The 3D world renders into a SubViewport (its own World3D + physics space), so the
+        // docked panel can take screen space without occluding the view.
+        var viewport = new SubViewport { RenderTargetUpdateMode = SubViewport.UpdateMode.Always };
+        viewport.AddChild(grid);
+        viewport.AddChild(levelView);
+        viewport.AddChild(previewLayer);
+        viewport.AddChild(gizmos);
+        viewport.AddChild(cursor);     // before ToolManager so HoveredCell/Corner is fresh each frame
+        viewport.AddChild(cameraRig);
+        viewport.AddChild(picker);
+        viewport.AddChild(tools);
+        viewport.AddChild(BuildSunLight());
+        viewport.AddChild(BuildEnvironment());
+
+        // Stretch makes the SubViewport track the container's size, which is what keeps the
+        // mouse-to-camera projection correct even though the viewport is offset by the panel.
+        var viewportContainer = new SubViewportContainer
+        {
+            Stretch = true,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+        };
+        viewportContainer.AddChild(viewport);
+
+        var sceneTree = new SceneTreePanel();
+
+        var split = new HSplitContainer();
+        split.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        split.AddChild(sceneTree);          // left: docked panel
+        split.AddChild(viewportContainer);  // right: 3D view (expands to fill)
+        AddChild(split);
 
         var ctx = new EditorContext
         {
@@ -61,6 +87,7 @@ public partial class Main : Node3D
             Picker = picker,
             Gizmos = gizmos,
         };
+        sceneTree.Setup(ctx);        // subscribe before the first Changed fires below
         ctx.SetActiveStorey(storey); // unified path: positions grid + cursor at the storey's elevation
         tools.Setup(ctx);
     }

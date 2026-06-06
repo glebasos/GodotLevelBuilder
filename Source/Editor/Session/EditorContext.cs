@@ -39,6 +39,13 @@ public sealed class EditorContext
     public IReadOnlyList<IEditHandle> Handles => _handles;
 
     /// <summary>
+    /// Raised whenever the scene changes: any structural edit, selection change, active-storey
+    /// switch, or live-drag frame routes through here. UI panels (e.g. the scene tree) subscribe
+    /// to stay in sync. Fired often (per drag frame) — subscribers should cheaply gate their work.
+    /// </summary>
+    public event System.Action Changed;
+
+    /// <summary>
     /// Re-syncs everything derived from selection + document state: the view's selection, the live
     /// mesh, and the gizmo handles. The single choke point for "the scene changed" — every command,
     /// selection change, and live drag frame routes through here, so the handle widgets track edits
@@ -51,6 +58,7 @@ public sealed class EditorContext
         _handles = BuildHandles();
         View.Rebuild();
         Gizmos.Rebuild(_handles);
+        Changed?.Invoke();
     }
 
     private List<IEditHandle> BuildHandles()
@@ -97,6 +105,7 @@ public sealed class EditorContext
         if (Grid != null) Grid.Position = new Vector3(0, s.BaseElevation, 0);
         GD.Print($"[storey] active: {s.Name}  (base {s.BaseElevation:0.##} m, height {s.Height:0.##} m)");
         ClearSelection(); // drop a selection from another storey; refreshes view + gizmos if needed
+        Changed?.Invoke(); // ensure the active-storey marker updates even when nothing was selected
     }
 
     private void SwitchStorey(int dir)
