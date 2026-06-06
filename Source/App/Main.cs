@@ -69,11 +69,22 @@ public partial class Main : Node3D
 
         var sceneTree = new SceneTreePanel();
 
-        var split = new HSplitContainer();
-        split.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        // Top row: scene-tree dock | 3D view.
+        var split = new HSplitContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
         split.AddChild(sceneTree);          // left: docked panel
         split.AddChild(viewportContainer);  // right: 3D view (expands to fill)
-        AddChild(split);
+
+        // Bottom dock: tabbed — primitive palette now, textures later.
+        var palette = new PrimitivePalettePanel { Name = "Primitives" };
+        var bottomTabs = new TabContainer { CustomMinimumSize = new Vector2(0, 180) };
+        bottomTabs.AddChild(palette);
+        bottomTabs.AddChild(BuildTexturesPlaceholder());
+
+        var outer = new VSplitContainer();
+        outer.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        outer.AddChild(split);       // top: viewport row (expands)
+        outer.AddChild(bottomTabs);  // bottom: tabbed dock
+        AddChild(outer);
 
         var ctx = new EditorContext
         {
@@ -90,6 +101,14 @@ public partial class Main : Node3D
         sceneTree.Setup(ctx);        // subscribe before the first Changed fires below
         ctx.SetActiveStorey(storey); // unified path: positions grid + cursor at the storey's elevation
         tools.Setup(ctx);
+        palette.Setup(registry, tools); // after tools.Setup so the primitive->tool map exists
+    }
+
+    private static Control BuildTexturesPlaceholder()
+    {
+        var center = new CenterContainer { Name = "Textures" };
+        center.AddChild(new Label { Text = "Textures — coming soon", Modulate = new Color(1, 1, 1, 0.5f) });
+        return center;
     }
 
     private static LevelDocument NewDocument(out StoreyData storey)

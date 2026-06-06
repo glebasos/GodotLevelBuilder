@@ -16,22 +16,65 @@ public partial class ToolManager : Node
     private ITool _active;
     private Dictionary<Key, ITool> _tools;
 
+    /// <summary>Palette id -> the tool it activates. Covers draw-primitive tools AND openings (door/window).</summary>
+    private Dictionary<string, ITool> _toolsById;
+    private Dictionary<ITool, string> _idByTool;
+
+    /// <summary>
+    /// Fires when the active tool changes, carrying the palette id of the tool (a primitive TypeId,
+    /// or "door"/"window"), or null for tools with no palette entry (Select). The palette syncs its
+    /// highlight from this.
+    /// </summary>
+    public event System.Action<string> ActiveToolIdChanged;
+
     public void Setup(EditorContext ctx)
     {
         _ctx = ctx;
+
+        var floor = new FloorDrawTool();
+        var wall = new WallDrawTool();
+        var ramp = new RampDrawTool();
+        var stairs = new StairsDrawTool();
+        var rampPlane = new RampPlaneDrawTool();
+        var stairPlane = new StairPlaneDrawTool();
+        var door = new OpeningTool(OpeningPreset.Door);
+        var window = new OpeningTool(OpeningPreset.Window);
+
         _tools = new Dictionary<Key, ITool>
         {
             { Key.S, new SelectTool() },
-            { Key.F, new FloorDrawTool() },
-            { Key.W, new WallDrawTool() },
-            { Key.D, new OpeningTool(OpeningPreset.Door) },
-            { Key.N, new OpeningTool(OpeningPreset.Window) },
-            { Key.R, new RampDrawTool() },
-            { Key.T, new StairsDrawTool() },
-            { Key.G, new RampPlaneDrawTool() },
-            { Key.H, new StairPlaneDrawTool() },
+            { Key.F, floor },
+            { Key.W, wall },
+            { Key.D, door },
+            { Key.N, window },
+            { Key.R, ramp },
+            { Key.T, stairs },
+            { Key.G, rampPlane },
+            { Key.H, stairPlane },
         };
+
+        _toolsById = new Dictionary<string, ITool>
+        {
+            { "floor", floor },
+            { "wall", wall },
+            { "ramp", ramp },
+            { "stairs", stairs },
+            { "ramp_plane", rampPlane },
+            { "stair_plane", stairPlane },
+            { "door", door },
+            { "window", window },
+        };
+        _idByTool = new Dictionary<ITool, string>();
+        foreach (var (id, tool) in _toolsById) _idByTool[tool] = id;
+
         GD.Print("[tools] S = Select (click door/window to select, drag to move it along the wall), F = Floor, W = Wall, R = Ramp, T = sTairs, G = ramp plane (Gradient), H = stair plane, D = Door, N = wiNdow, +/- = storey up/down, Del = delete, Esc/RMB = cancel, Ctrl+Z/Y = undo/redo, Ctrl+B = bake, Ctrl+S = save");
+    }
+
+    /// <summary>Activate a tool by its palette id (palette click). No-op if unknown.</summary>
+    public void ActivateToolById(string id)
+    {
+        if (_toolsById != null && _toolsById.TryGetValue(id, out ITool tool))
+            SetActive(tool);
     }
 
     public override void _UnhandledInput(InputEvent e)
@@ -94,5 +137,6 @@ public partial class ToolManager : Node
         _ctx.Cursor.Enabled = tool.UsesGridCursor;
         tool.Activate(_ctx);
         GD.Print($"[tool] {tool.Name} active");
+        ActiveToolIdChanged?.Invoke(_idByTool.GetValueOrDefault(tool));
     }
 }
