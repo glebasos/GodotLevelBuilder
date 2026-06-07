@@ -29,162 +29,103 @@ Id = "proto_trim"
 DisplayName = "Proto Trim"
 MaterialPath = "res://Assets/Materials/proto_trim.tres"
 
+[sub_resource type="Resource" id="Resource_n2tdi"]
+script = ExtResource("2_01i8b")
+Id = "tex:res://Assets/user_textures/1K_Bricks.png"
+DisplayName = "1K_Bricks.png"
+TexturePath = "res://Assets/user_textures/1K_Bricks.png"
+
+[sub_resource type="Resource" id="Resource_f014f"]
+script = ExtResource("2_01i8b")
+Id = "tex:res://Assets/user_textures/cobblestone_3.png"
+DisplayName = "cobblestone_3.png"
+TexturePath = "res://Assets/user_textures/cobblestone_3.png"
+
 [sub_resource type="Resource" id="Resource_ih1lu"]
-script = ExtResource("2_01i8b")
-Id = "tex:res://Assets/kenney_prototype_textures/dark/texture_08.png"
-DisplayName = "texture_08.png"
-TexturePath = "res://Assets/kenney_prototype_textures/dark/texture_08.png"
-
-[sub_resource type="Resource" id="Resource_01i8b"]
-script = ExtResource("2_01i8b")
-Id = "tex:res://Assets/kenney_prototype_textures/dark/texture_09.png"
-DisplayName = "texture_09.png"
-TexturePath = "res://Assets/kenney_prototype_textures/dark/texture_09.png"
-
-[sub_resource type="Resource" id="Resource_5k02q"]
 script = ExtResource("2_01i8b")
 Id = "tex:res://Assets/kenney_prototype_textures/green/texture_10.png"
 DisplayName = "texture_10.png"
 TexturePath = "res://Assets/kenney_prototype_textures/green/texture_10.png"
 
-[sub_resource type="Resource" id="Resource_8xf4j"]
-script = ExtResource("2_01i8b")
-Id = "tex:res://Assets/kenney_prototype_textures/light/texture_08.png"
-DisplayName = "texture_08.png"
-TexturePath = "res://Assets/kenney_prototype_textures/light/texture_08.png"
-
-[sub_resource type="Resource" id="Resource_nf8rp"]
-script = ExtResource("2_01i8b")
-Id = "tex:res://Assets/kenney_prototype_textures/orange/texture_10.png"
-DisplayName = "texture_10.png"
-TexturePath = "res://Assets/kenney_prototype_textures/orange/texture_10.png"
-
-[sub_resource type="Resource" id="Resource_fx6pr"]
-script = ExtResource("2_01i8b")
-Id = "tex:res://Assets/kenney_prototype_textures/purple/texture_10.png"
-DisplayName = "texture_10.png"
-TexturePath = "res://Assets/kenney_prototype_textures/purple/texture_10.png"
-
-[sub_resource type="Resource" id="Resource_n2tdi"]
+[sub_resource type="Resource" id="Resource_gpbrx"]
 script = ExtResource("3_5k02q")
-Entries = Array[ExtResource("2_01i8b")]([SubResource("Resource_et28f"), SubResource("Resource_eln4t"), SubResource("Resource_wt3rf"), SubResource("Resource_ih1lu"), SubResource("Resource_01i8b"), SubResource("Resource_5k02q"), SubResource("Resource_8xf4j"), SubResource("Resource_nf8rp"), SubResource("Resource_fx6pr")])
+Entries = Array[ExtResource("2_01i8b")]([SubResource("Resource_et28f"), SubResource("Resource_eln4t"), SubResource("Resource_wt3rf"), SubResource("Resource_n2tdi"), SubResource("Resource_f014f"), SubResource("Resource_ih1lu")])
 
-[sub_resource type="Resource" id="Resource_f014f"]
+[sub_resource type="Resource" id="Resource_01i8b"]
 script = ExtResource("5_nf8rp")
-Id = "e2636ef4"
+Id = "5dc4a185"
 PrimitiveType = "floor"
-LocalTransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0, 1.5)
+LocalTransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, -5)
 Parameters = {
-"depth": 7.0,
+"depth": 10.0,
 "thickness": 0.2,
-"width": 7.0
+"width": 6.0
 }
 MaterialSlots = {
-"Bottom": "tex:res://Assets/kenney_prototype_textures/light/texture_08.png",
-"Edge": "tex:res://Assets/kenney_prototype_textures/light/texture_08.png",
-"Top": "tex:res://Assets/kenney_prototype_textures/light/texture_08.png"
+"Bottom": "tex:res://Assets/user_textures/cobblestone_3.png",
+"Edge": "tex:res://Assets/user_textures/cobblestone_3.png",
+"Top": "tex:res://Assets/user_textures/cobblestone_3.png"
 }
 
-[sub_resource type="Resource" id="Resource_gpbrx"]
+[sub_resource type="Resource" id="Resource_5k02q"]
+script = ExtResource("6_fx6pr")
+Id = "e3a4b9da"
+Offset = 1.05
+Width = 0.9
+Height = 2.1
+
+[sub_resource type="Resource" id="Resource_8xf4j"]
+script = ExtResource("6_fx6pr")
+Id = "9e4807ff"
+Offset = 2.65
+Width = 2.45
+Height = 1.2
+SillHeight = 0.9
+
+[sub_resource type="Resource" id="Resource_nf8rp"]
 script = ExtResource("5_nf8rp")
-Id = "92dbe8d0"
+Id = "e535d2ab"
 PrimitiveType = "wall"
-LocalTransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0, -2)
+LocalTransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, -10)
 Parameters = {
 "height": 3.0,
-"length": 7.0,
+"length": 6.0,
 "thickness": 0.2
 }
 MaterialSlots = {
-"Back": "tex:res://Assets/kenney_prototype_textures/orange/texture_10.png",
-"Ends": "tex:res://Assets/kenney_prototype_textures/orange/texture_10.png",
-"Front": "tex:res://Assets/kenney_prototype_textures/orange/texture_10.png",
-"Reveal": "tex:res://Assets/kenney_prototype_textures/orange/texture_10.png",
-"Top": "tex:res://Assets/kenney_prototype_textures/orange/texture_10.png"
+"Back": "tex:res://Assets/user_textures/1K_Bricks.png",
+"Ends": "tex:res://Assets/user_textures/1K_Bricks.png",
+"Front": "tex:res://Assets/user_textures/1K_Bricks.png",
+"Reveal": "tex:res://Assets/user_textures/1K_Bricks.png",
+"Top": "tex:res://Assets/user_textures/1K_Bricks.png"
 }
+Openings = Array[ExtResource("6_fx6pr")]([SubResource("Resource_5k02q"), SubResource("Resource_8xf4j")])
 
-[sub_resource type="Resource" id="Resource_smeqs"]
+[sub_resource type="Resource" id="Resource_fx6pr"]
 script = ExtResource("5_nf8rp")
-Id = "d2ae34f2"
+Id = "7c37fefb"
 PrimitiveType = "stairs"
-LocalTransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0, 0.5)
+LocalTransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 0, -10.5)
 Parameters = {
-"run": 7.0,
+"run": 8.0,
 "steps": 17,
 "totalRise": 3.0,
 "width": 1.0
 }
 MaterialSlots = {
-"Riser": "tex:res://Assets/kenney_prototype_textures/purple/texture_10.png",
-"Side": "tex:res://Assets/kenney_prototype_textures/purple/texture_10.png",
-"Tread": "tex:res://Assets/kenney_prototype_textures/purple/texture_10.png"
+"Riser": "tex:res://Assets/user_textures/cobblestone_3.png",
+"Side": "tex:res://Assets/user_textures/cobblestone_3.png",
+"Tread": "tex:res://Assets/user_textures/cobblestone_3.png"
 }
 
-[sub_resource type="Resource" id="Resource_ke2yk"]
+[sub_resource type="Resource" id="Resource_krvkt"]
 script = ExtResource("4_8xf4j")
-Id = "20405cc2"
+Id = "800ddfc5"
 Name = "Ground Floor"
-Instances = Array[ExtResource("5_nf8rp")]([SubResource("Resource_f014f"), SubResource("Resource_gpbrx"), SubResource("Resource_smeqs")])
-
-[sub_resource type="Resource" id="Resource_yg8mj"]
-script = ExtResource("5_nf8rp")
-Id = "3437f84b"
-PrimitiveType = "floor"
-LocalTransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, 1)
-Parameters = {
-"depth": 12.0,
-"thickness": 0.2,
-"width": 8.0
-}
-MaterialSlots = {
-"Bottom": "tex:res://Assets/kenney_prototype_textures/dark/texture_09.png",
-"Edge": "tex:res://Assets/kenney_prototype_textures/dark/texture_09.png",
-"Top": "tex:res://Assets/kenney_prototype_textures/dark/texture_09.png"
-}
-
-[sub_resource type="Resource" id="Resource_j2nui"]
-script = ExtResource("6_fx6pr")
-Id = "551ca90a"
-Offset = 0.54999995
-Width = 2.15
-Height = 2.1
-
-[sub_resource type="Resource" id="Resource_ex48n"]
-script = ExtResource("6_fx6pr")
-Id = "eb8f8a69"
-Offset = 3.65
-Width = 2.7
-Height = 1.95
-SillHeight = 0.39999998
-
-[sub_resource type="Resource" id="Resource_f6s2t"]
-script = ExtResource("5_nf8rp")
-Id = "2e4c9a1e"
-PrimitiveType = "wall"
-LocalTransform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -5, 0, 3.5)
-Parameters = {
-"height": 3.0,
-"length": 7.0,
-"thickness": 0.2
-}
-MaterialSlots = {
-"Back": "tex:res://Assets/kenney_prototype_textures/green/texture_10.png",
-"Ends": "tex:res://Assets/kenney_prototype_textures/green/texture_10.png",
-"Front": "tex:res://Assets/kenney_prototype_textures/green/texture_10.png",
-"Reveal": "tex:res://Assets/kenney_prototype_textures/green/texture_10.png",
-"Top": "tex:res://Assets/kenney_prototype_textures/green/texture_10.png"
-}
-Openings = Array[ExtResource("6_fx6pr")]([SubResource("Resource_j2nui"), SubResource("Resource_ex48n")])
-
-[sub_resource type="Resource" id="Resource_43sur"]
-script = ExtResource("4_8xf4j")
-Id = "47f6f7d9"
-Name = "Storey 3 m"
-BaseElevation = 3.0
-Instances = Array[ExtResource("5_nf8rp")]([SubResource("Resource_yg8mj"), SubResource("Resource_f6s2t")])
+Instances = Array[ExtResource("5_nf8rp")]([SubResource("Resource_01i8b"), SubResource("Resource_nf8rp"), SubResource("Resource_fx6pr")])
 
 [resource]
 script = ExtResource("7_58w5t")
 Grid = SubResource("Resource_ltcsi")
-Materials = SubResource("Resource_n2tdi")
-Storeys = Array[ExtResource("4_8xf4j")]([SubResource("Resource_ke2yk"), SubResource("Resource_43sur")])
+Materials = SubResource("Resource_gpbrx")
+Storeys = Array[ExtResource("4_8xf4j")]([SubResource("Resource_krvkt")])

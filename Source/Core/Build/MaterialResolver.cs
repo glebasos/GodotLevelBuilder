@@ -51,9 +51,9 @@ public sealed class MaterialResolver
         if (!string.IsNullOrEmpty(entry.MaterialPath) && ResourceLoader.Exists(entry.MaterialPath))
             return ResourceLoader.Load<Material>(entry.MaterialPath);
 
-        if (!string.IsNullOrEmpty(entry.TexturePath) && ResourceLoader.Exists(entry.TexturePath))
+        if (!string.IsNullOrEmpty(entry.TexturePath))
         {
-            var tex = ResourceLoader.Load<Texture2D>(entry.TexturePath);
+            Texture2D tex = TextureLoader.Load(entry.TexturePath); // imported, or raw-decoded if not yet reimported
             return tex == null ? null : new StandardMaterial3D { AlbedoTexture = tex };
         }
 

@@ -18,7 +18,7 @@ public partial class TextureSwatch : TextureRect
     public void Setup(TextureItem item)
     {
         TexturePath = item.Path;
-        Texture = GD.Load<Texture2D>(item.Path);
+        Texture = TextureLoader.Load(item.Path); // raw-decode fallback so a just-added texture shows before reimport
         // IgnoreSize: don't let the texture's native resolution drive the control size; ShrinkCenter:
         // don't let the flow container stretch it. Together they pin the thumbnail to SwatchSize.
         ExpandMode = ExpandModeEnum.IgnoreSize;
