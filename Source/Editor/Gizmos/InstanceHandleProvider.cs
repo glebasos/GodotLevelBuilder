@@ -73,8 +73,44 @@ public static class InstanceHandleProvider
                 AddFace(handles, inst, prim, world, "thickness", midH + down * t, down, 0f);
                 break;
             }
-            // half_pipe: a swept (curve + rise) channel — its far end isn't on local +X once curved, so
-            // there's no clean axis-drag handle; all dimensions are edited via the inspector (like banked_curve).
+            case "banked_curve":
+            {
+                float w = GetF(inst, "width", 2f), t = GetF(inst, "thickness", 0.2f);
+                float bank = GetF(inst, "bank", 0f), arcD = GetF(inst, "arc", 90f);
+                float dir = arcD >= 0 ? 1f : -1f;
+                float beta = Mathf.DegToRad(bank);
+                // Entry cross-section: lateral runs across the path; +lateral is the outer (raised) edge.
+                var lateral = new Vector3(0, Mathf.Sin(beta), dir * Mathf.Cos(beta));
+                // Width grows symmetric about the centreline (origin fixed, shiftFactor 0) so the centreline
+                // stays on its radius circle — a handle on each edge of the entry cross-section.
+                AddFace(handles, inst, prim, world, "width", lateral * (w * 0.5f), lateral, 0f);
+                AddFace(handles, inst, prim, world, "width", -lateral * (w * 0.5f), -lateral, 0f);
+                // Thickness grows straight down from the fixed walkable top.
+                AddFace(handles, inst, prim, world, "thickness", new Vector3(0, -t, 0), new Vector3(0, -1, 0), 0f);
+                break;
+            }
+            case "half_pipe":
+            {
+                // Rotational params (curve, arc, bank) and radius have no clean axis drag → inspector only.
+                // The linear ones do: rise lifts the far end, and length stretches it (only while straight,
+                // since once curved the far end leaves local +X). Both keep the entry (f=0) end fixed.
+                float length = GetF(inst, "length", 4f), rise = GetF(inst, "rise", 0f), curve = GetF(inst, "curve", 0f);
+                float curveRad = Mathf.DegToRad(curve);
+                bool straight = Mathf.Abs(curveRad) < 1e-4f;
+                Vector3 farH;
+                if (straight)
+                    farH = new Vector3(length, 0, 0);
+                else
+                {
+                    float sgn = curve >= 0 ? 1f : -1f, rh = length / Mathf.Abs(curveRad), th = Mathf.Abs(curveRad);
+                    farH = new Vector3(rh * Mathf.Sin(th), 0, sgn * (rh * Mathf.Cos(th) - rh));
+                }
+                var farP = new Vector3(farH.X, rise, farH.Z);
+                AddFace(handles, inst, prim, world, "rise", farP + new Vector3(0, 0.3f, 0), new Vector3(0, 1, 0), 0f);
+                if (straight)
+                    AddFace(handles, inst, prim, world, "length", farP, new Vector3(1, 0, 0), 0f);
+                break;
+            }
             case "stair_plane":
             {
                 float run = GetF(inst, "run", 3f), rise = GetF(inst, "totalRise", 3f), w = GetF(inst, "width", 1.2f), t = GetF(inst, "thickness", 0.1f);
