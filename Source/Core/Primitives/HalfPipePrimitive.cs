@@ -226,13 +226,14 @@ public sealed class HalfPipePrimitive : IPrimitive
             }
         }
 
-        // End caps: fan from loop[0]; reversed corner order at the two ends to match their opposite normals.
+        // End caps: fan from loop[0]; reversed corner order at the two ends to match their opposite
+        // normals (the start faces −t0, the end faces +tN — front faces point outward from the slab).
         Vector2 p0 = loop[0];
         for (int e = 1; e < n - 1; e++)
         {
             Vector2 pe = loop[e], pf = loop[e + 1];
-            MeshBuilder.AddTri(side, Frame(0, p0), Frame(0, pe), Frame(0, pf), -t0, p0, pe, pf);
-            MeshBuilder.AddTri(side, Frame(seg, p0), Frame(seg, pf), Frame(seg, pe), tN, p0, pf, pe);
+            MeshBuilder.AddTri(side, Frame(0, p0), Frame(0, pf), Frame(0, pe), -t0, p0, pf, pe);
+            MeshBuilder.AddTri(side, Frame(seg, p0), Frame(seg, pe), Frame(seg, pf), tN, p0, pe, pf);
         }
     }
 
