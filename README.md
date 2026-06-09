@@ -1,5 +1,7 @@
 # LevelBuilder
 
+> ⚠️ **This project was vibe slopped 100%.**
+
 A standalone **Godot 4.6 / C#** application for designing game levels out of parametric
 primitives — floors, walls, ramps, stairs, curves, domes, doors and windows — on a snapping
 3D grid, then **baking** them into a `.tscn` you drop straight into another Godot game.
@@ -120,6 +122,53 @@ right **inspector**, and a bottom tab bar with **Primitives / Textures / Project
 | `Ctrl+Z` / `Ctrl+Y` | Undo / Redo |
 | `Ctrl+S` | Save source `.tres` |
 | `Ctrl+B` | Bake to Godot (local preview) |
+
+### The Project tab
+
+The bottom **Project** tab holds every document-level action, in four sections:
+
+#### Workspace
+
+The **workspace** is a folder *on your disk* where your work lives — it is **not** inside this
+app's Godot project (`res://` is read-only at runtime, so saved levels and added textures can't
+go there). Picking one with **Change…** creates two subfolders and remembers the choice between
+sessions:
+
+- `<workspace>/levels/` — your editable `.tres` level sources (where Save/Open default).
+- `<workspace>/textures/` — custom textures.
+
+The label shows the current path, or *"(not set — pick a folder)"*. Set this first; Save and the
+texture library depend on it.
+
+#### Level
+
+Create, open, and save the editable source `.tres`:
+
+- **Name field** — the level's name (document metadata, not undo-tracked). It's the filename stem
+  for Save/Bake/Export, and stays in sync when you New/Open (without clobbering what you're typing).
+- **New** — start a fresh empty level.
+- **Open…** — file dialog (`*.tres`) rooted at `<workspace>/levels/`.
+- **Save** — writes `<workspace>/levels/<Name>.tres` and remembers the path (also `Ctrl+S`).
+
+#### Bake (local preview)
+
+Bakes a `.tscn` into this app's own project at `res://Baked/` — for previewing the result here,
+**not** for shipping. Two modes:
+
+- **Bake (per-object)** — one node per primitive instance; keeps per-object material overrides.
+  Writes `res://Baked/<Name>.tscn` (also `Ctrl+B`).
+- **Bake Merged Chunk** — one merged mesh per material + one precise trimesh collision; per-object
+  overrides collapse to per-material. Writes `res://Baked/<Name>_merged.tscn`.
+
+#### Export to game
+
+Ships a level into another Godot project:
+
+- **Set…** — choose the target game project's folder (remembered between sessions). The label
+  shows it, or *"(no target project set)"*.
+- **Export to Game** — disabled until a target is set. Writes a **merged chunk** with textures
+  **embedded inline** into `<target>/levels/<Name>.tscn`, so the scene is fully self-contained
+  (no `res://` setup needed in the target project).
 
 ### Adding your own textures
 

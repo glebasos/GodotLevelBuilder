@@ -13,5 +13,6 @@
     <Content Include="docs\PLANNED_OPENINGS_AS_OBJECTS.md" />
     <Content Include="docs\PRIMITIVES.md" />
     <Content Include="docs\ROADMAP.md" />
+    <Content Include="README.md" />
   </ItemGroup>
 </Project>

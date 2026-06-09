@@ -14,7 +14,7 @@ Geometry is **procedural `ArrayMesh`** (no live CSG). Each primitive type is a c
 
 ## Build & run
 
-- **Build:** `dotnet build` from the repo root. (Verified working; SDK = Godot.NET.Sdk/4.6.3, target `net8.0`.) Godot also builds the C# assembly itself on play.
+- **Build:** `dotnet build` from the repo root. (Verified working; SDK = Godot.NET.Sdk/4.6.3, target `net10.0`.) Godot also builds the C# assembly itself on play.
 - **Run:** open the project in the Godot editor and press **F5** (main scene is `Scenes/Main.tscn`), or `godot --path .` if you have the Godot 4.6 binary on PATH. The user runs Godot — don't go hunting for the executable.
 - **After changing C#:** rebuild (`dotnet build` or let Godot rebuild) before pressing play, or the editor runs stale code.
 
