@@ -30,7 +30,7 @@ public partial class GridRenderer : Node3D
     /// always completes well inside it, so the quad's edge is never visible.</summary>
     private const float QuadRadius = 6000f;
     /// <summary>Ghost grid alpha multiplier relative to the main grid.</summary>
-    private const float GhostOpacity = 0.35f;
+    private const float GhostOpacity = 0.08f;
 
     private MeshInstance3D _main;
     private MeshInstance3D _ghost;
