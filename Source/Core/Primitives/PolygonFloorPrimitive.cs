@@ -44,6 +44,9 @@ public sealed class PolygonFloorPrimitive : IPrimitive
         // posts + top beam (fence); Bank = an angled wedge that funnels the ball back to centre. Enum values
         // are APPEND-ONLY so stored values stay stable across round-trips.
         new ParamSpec("rail",       "Rail",        ParamType.Int,   0, 0f, 3f, new[] { "None", "Rail", "Elevated Rail", "Bank" }),
+        // Independent rim style for the HOLE perimeters (same four styles), so holes can carry a different
+        // rail than the outer outline — or none at all. Append-only enum, same as "rail".
+        new ParamSpec("holeRail",   "Hole Rail",   ParamType.Int,   0, 0f, 3f, new[] { "None", "Rail", "Elevated Rail", "Bank" }),
         new ParamSpec("railHeight", "Rail Height", ParamType.Float, 0.4f, 0.02f, 50f),
         new ParamSpec("railWidth",  "Rail Width",  ParamType.Float, 0.2f, 0.02f, 50f),
     };
@@ -104,18 +107,44 @@ public sealed class PolygonFloorPrimitive : IPrimitive
             foreach (List<Vector3> ring in bridged) AddWalls(edge, ring, t, Centroid(ring), outward: false);
         Commit(edge, mesh);
 
-        // Surface 3: Rail — a perimeter rim following the OUTER outline (holes get no rail; they're
-        // fall-through voids). Built only when a style is selected, into a strictly-last surface so the
-        // positional slot mapping for Top/Bottom/Edge is undisturbed.
+        // Surface 3: Rail — perimeter rims, built only when a style is selected, into a strictly-last surface
+        // so the positional slot mapping for Top/Bottom/Edge is undisturbed. The OUTER outline and the HOLE
+        // perimeters carry INDEPENDENT styles ("rail" vs "holeRail") but share this single surface / "Rail"
+        // material slot: surface 3 is emitted whenever EITHER is non-None, so the slot stays exactly one
+        // trailing-conditional surface (a second conditional surface would shift the positional mapping when
+        // the outer rail is off but a hole rail is on). The outer outline insets INWARD (toward its centroid);
+        // each hole insets OUTWARD into the solid (away from the hole centroid, negative width) so its rim sits
+        // on the slab around the void with the lip facing in. Holes only get rims for the rings that bridged.
         int railStyle = GetI(data, "rail", 0);
-        if (railStyle != 0 && pts.Count >= 3)
+        int holeRailStyle = GetI(data, "holeRail", 0);
+        if ((railStyle != 0 || holeRailStyle != 0) && pts.Count >= 3)
         {
             float rh = GetF(data, "railHeight", 0.4f);
             float rw = GetF(data, "railWidth", 0.2f);
-            rw = Mathf.Min(rw, 0.45f * MinEdge(outer2d)); // keep the inward inset from inverting on small polys
-            Vector2[] inset = InsetRing(outer2d, centroid2d, rw);
             SurfaceTool rail = Begin();
-            if (BuildRail(rail, outer2d, inset, railStyle, rh, rw)) Commit(rail, mesh);
+            bool any = false;
+
+            if (railStyle != 0)
+            {
+                float w = Mathf.Min(rw, 0.45f * MinEdge(outer2d)); // keep the inward inset from inverting on small polys
+                Vector2[] inset = InsetRing(outer2d, centroid2d, w);
+                if (BuildRail(rail, outer2d, inset, railStyle, rh, w)) any = true;
+            }
+
+            if (holeRailStyle != 0 && bridged != null)
+            {
+                foreach (List<Vector3> ring in bridged)
+                {
+                    var hole2d = new Vector2[ring.Count];
+                    for (int i = 0; i < ring.Count; i++) hole2d[i] = new Vector2(ring[i].X, ring[i].Z);
+                    Vector2 hcent = Centroid2d(hole2d);
+                    float w = Mathf.Min(rw, 0.45f * MinEdge(hole2d));
+                    Vector2[] inset = InsetRing(hole2d, hcent, -w); // outward into the solid (away from hole centre)
+                    if (BuildRail(rail, hole2d, inset, holeRailStyle, rh, w)) any = true;
+                }
+            }
+
+            if (any) Commit(rail, mesh);
         }
 
         return mesh;
@@ -205,6 +234,13 @@ public sealed class PolygonFloorPrimitive : IPrimitive
         Vector3 c = Vector3.Zero;
         foreach (Vector3 p in ring) c += p;
         return c / ring.Count;
+    }
+
+    private static Vector2 Centroid2d(Vector2[] ring)
+    {
+        Vector2 c = Vector2.Zero;
+        foreach (Vector2 p in ring) c += p;
+        return c / ring.Length;
     }
 
     // --- Auto-rail. A rim swept along the outline (in XZ), sitting ON TOP of the slab (the slab top is local
