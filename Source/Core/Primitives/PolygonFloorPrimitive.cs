@@ -42,13 +42,20 @@ public sealed class PolygonFloorPrimitive : IPrimitive
         new ParamSpec("thickness", "Thickness", ParamType.Float, 0.2f, 0.01f, 100f),
         // Auto-rail following the outer outline. None = bare slab; Rail = solid curb/lip; Elevated Rail =
         // posts + top beam (fence); Bank = an angled wedge that funnels the ball back to centre. Enum values
-        // are APPEND-ONLY so stored values stay stable across round-trips.
+        // are APPEND-ONLY so stored values stay stable across round-trips. Height/Width/Bank Angle are the
+        // PERIMETER set; the holes carry their own independent set below.
         new ParamSpec("rail",       "Rail",        ParamType.Int,   0, 0f, 3f, new[] { "None", "Rail", "Elevated Rail", "Bank" }),
-        // Independent rim style for the HOLE perimeters (same four styles), so holes can carry a different
-        // rail than the outer outline — or none at all. Append-only enum, same as "rail".
-        new ParamSpec("holeRail",   "Hole Rail",   ParamType.Int,   0, 0f, 3f, new[] { "None", "Rail", "Elevated Rail", "Bank" }),
         new ParamSpec("railHeight", "Rail Height", ParamType.Float, 0.4f, 0.02f, 50f),
         new ParamSpec("railWidth",  "Rail Width",  ParamType.Float, 0.2f, 0.02f, 50f),
+        // Bank slope from horizontal (degrees): the wedge drops railHeight over a run of height/tan(angle),
+        // so a small angle is a long shallow ramp and a large angle a short steep one. Ignored unless Bank.
+        new ParamSpec("bankAngle",  "Bank Angle",  ParamType.Float, 45f, 5f, 85f),
+        // Independent rim for the HOLE perimeters (same four styles + its own Height/Width/Bank Angle), so
+        // holes can carry a different rail than the outer outline — or none at all. Append-only enum.
+        new ParamSpec("holeRail",       "Hole Rail",        ParamType.Int,   0, 0f, 3f, new[] { "None", "Rail", "Elevated Rail", "Bank" }),
+        new ParamSpec("holeRailHeight", "Hole Rail Height", ParamType.Float, 0.4f, 0.02f, 50f),
+        new ParamSpec("holeRailWidth",  "Hole Rail Width",  ParamType.Float, 0.2f, 0.02f, 50f),
+        new ParamSpec("holeBankAngle",  "Hole Bank Angle",  ParamType.Float, 45f, 5f, 85f),
     };
 
     // "Rail" is a TRAILING, CONDITIONAL slot: surface 3 is emitted only when rail != None (like the dome's
@@ -119,28 +126,25 @@ public sealed class PolygonFloorPrimitive : IPrimitive
         int holeRailStyle = GetI(data, "holeRail", 0);
         if ((railStyle != 0 || holeRailStyle != 0) && pts.Count >= 3)
         {
-            float rh = GetF(data, "railHeight", 0.4f);
-            float rw = GetF(data, "railWidth", 0.2f);
             SurfaceTool rail = Begin();
             bool any = false;
 
             if (railStyle != 0)
-            {
-                float w = Mathf.Min(rw, 0.45f * MinEdge(outer2d)); // keep the inward inset from inverting on small polys
-                Vector2[] inset = InsetRing(outer2d, centroid2d, w);
-                if (BuildRail(rail, outer2d, inset, railStyle, rh, w)) any = true;
-            }
+                any |= EmitRail(rail, outer2d, centroid2d, railStyle,
+                                GetF(data, "railHeight", 0.4f), GetF(data, "railWidth", 0.2f),
+                                GetF(data, "bankAngle", 45f), inward: true);
 
             if (holeRailStyle != 0 && bridged != null)
             {
+                float hh = GetF(data, "holeRailHeight", 0.4f);
+                float hw = GetF(data, "holeRailWidth", 0.2f);
+                float ha = GetF(data, "holeBankAngle", 45f);
                 foreach (List<Vector3> ring in bridged)
                 {
                     var hole2d = new Vector2[ring.Count];
                     for (int i = 0; i < ring.Count; i++) hole2d[i] = new Vector2(ring[i].X, ring[i].Z);
-                    Vector2 hcent = Centroid2d(hole2d);
-                    float w = Mathf.Min(rw, 0.45f * MinEdge(hole2d));
-                    Vector2[] inset = InsetRing(hole2d, hcent, -w); // outward into the solid (away from hole centre)
-                    if (BuildRail(rail, hole2d, inset, holeRailStyle, rh, w)) any = true;
+                    // inward: false → inset OUTWARD into the solid, so the rim sits on the slab around the void.
+                    any |= EmitRail(rail, hole2d, Centroid2d(hole2d), holeRailStyle, hh, hw, ha, inward: false);
                 }
             }
 
@@ -243,10 +247,29 @@ public sealed class PolygonFloorPrimitive : IPrimitive
         return c / ring.Length;
     }
 
-    // --- Auto-rail. A rim swept along the outline (in XZ), sitting ON TOP of the slab (the slab top is local
-    // y=0, so the rail rises 0→h). The outline is offset inward by the rail width into a mitered INSET RING;
-    // each style emits a per-edge cross-section between the outline and the inset. Winding is delegated to
+    // --- Auto-rail. A rim swept along a ring (in XZ), sitting ON TOP of the slab (the slab top is local
+    // y=0, so the rail rises 0→h). The ring is offset by the inset RUN into a mitered INSET RING; each style
+    // emits a per-edge cross-section between the ring and the inset. Winding is delegated to
     // MeshBuilder.AddQuadFacing (each face just states which way it should look), so no hand-tracked CCW.
+
+    /// <summary>Builds one rim along <paramref name="poly"/> at height <paramref name="h"/>. <paramref name="w"/>
+    /// is the rail width (curb thickness / post + beam cross-section); the Bank style instead derives its inset
+    /// RUN from the angle (run = h / tan(angle)) so the slope sits at exactly that angle. <paramref name="inward"/>
+    /// insets toward the centroid (outer outline); false insets outward into the solid (a hole rim). The run is
+    /// clamped so a wide rim can't invert a small ring. Returns false (nothing emitted) when style is None/unknown.</summary>
+    private static bool EmitRail(SurfaceTool rail, Vector2[] poly, Vector2 centroid,
+                                 int style, float h, float w, float bankAngleDeg, bool inward)
+    {
+        if (style == 0) return false;
+        float limit = 0.45f * MinEdge(poly);                 // keep the inset from inverting on small rings
+        w = Mathf.Min(w, limit);
+        float run = style == 3                               // Bank: angle-driven run; others use the width
+            ? h / Mathf.Tan(Mathf.DegToRad(Mathf.Clamp(bankAngleDeg, 5f, 85f)))
+            : w;
+        run = Mathf.Min(run, limit);
+        Vector2[] inset = InsetRing(poly, centroid, inward ? run : -run);
+        return BuildRail(rail, poly, inset, style, h, w);
+    }
 
     /// <summary>Dispatches the rail style. Returns false (nothing emitted) for an unknown style so the caller
     /// skips committing an empty surface. <paramref name="w"/> is the rail width (inset / post-beam size).</summary>
@@ -285,8 +308,9 @@ public sealed class PolygonFloorPrimitive : IPrimitive
 
     /// <summary>Angled bank: a wedge per edge — a vertical outer wall at the outline (the high lip) and an
     /// inward slope from that lip's top down to the slab at the inset, so the perimeter funnels the ball back
-    /// toward the centre. Underside sits flush on the slab. Adjacent wedges share their outer-top and
-    /// inset-floor vertices (mitered inset), so the join is watertight without end caps.</summary>
+    /// toward the centre. The slope's angle is set by the caller via the inset distance (run = h/tan(angle)).
+    /// Underside sits flush on the slab. Adjacent wedges share their outer-top and inset-floor vertices
+    /// (mitered inset), so the join is watertight without end caps.</summary>
     private static void BuildBank(SurfaceTool rail, Vector2[] outer, Vector2[] inset, float h)
     {
         int n = outer.Length;
