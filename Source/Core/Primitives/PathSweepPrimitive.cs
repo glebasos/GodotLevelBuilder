@@ -38,6 +38,11 @@ public sealed class PathSweepPrimitive : IPrimitive
     // Profile enum (the "profile" param).
     private const int Ribbon = 0, Channel = 1, Wall = 2, Tube = 3;
 
+    // Edge-rail style ("rail" param). APPEND-ONLY (index = stored value): "Elevated Rail" is appended at 3
+    // rather than slotted next to its polygon-floor twin so existing path_sweep .tres with rail=Bank (=2)
+    // keep their meaning. Curb/Bank fold into the swept cross-section; Fence is emitted separately.
+    private const int RailNone = 0, RailCurb = 1, RailBank = 2, RailFence = 3;
+
     public IReadOnlyList<ParamSpec> Parameters { get; } = new[]
     {
         new ParamSpec("profile", "Profile", ParamType.Int, 0, 0f, 3f,
@@ -52,10 +57,12 @@ public sealed class PathSweepPrimitive : IPrimitive
         new ParamSpec("segments",   "Segments",    ParamType.Int,   8,     1f,   64f),
         new ParamSpec("closed",     "Closed Loop", ParamType.Bool,  false),
         // Edge rails — RIBBON profile only (the other profiles are already enclosed). None = bare slab;
-        // Rail = a vertical curb/lip down each long edge; Bank = an angled wedge down each edge. The rolling
-        // lane runs between the two rails. These feed a TRAILING, CONDITIONAL "Rail" surface/slot: surface 2
-        // exists only when a rail is built, so the positional Surface/Side mapping is undisturbed otherwise.
-        new ParamSpec("rail",          "Edge Rail",       ParamType.Int,   0, 0f, 2f, new[] { "None", "Rail", "Bank" }),
+        // Rail = a vertical curb/lip down each long edge; Bank = an angled wedge down each edge; Elevated Rail
+        // = posts + a top beam (fence) down each edge. The rolling lane runs between the two rails. These feed
+        // a TRAILING, CONDITIONAL "Rail" surface/slot: surface 2 exists only when a rail is built, so the
+        // positional Surface/Side mapping is undisturbed otherwise. (Enum appended-only — see RailFence above:
+        // order is None/Rail/Bank/Elevated Rail, unlike the polygon floor's None/Rail/Elevated Rail/Bank.)
+        new ParamSpec("rail",          "Edge Rail",       ParamType.Int,   0, 0f, 3f, new[] { "None", "Rail", "Bank", "Elevated Rail" }),
         new ParamSpec("railHeight",    "Rail Height",     ParamType.Float, 0.3f, 0.02f, 50f),
         new ParamSpec("railWidth",     "Rail Width",      ParamType.Float, 0.3f, 0.02f, 50f),
         // Bank wedge angle from horizontal (degrees): the wedge drops railHeight over a run of
@@ -154,8 +161,12 @@ public sealed class PathSweepPrimitive : IPrimitive
             U[i] = U[i].Rotated(T[i], a);
         }
 
-        int railStyle = GetI(data, "rail", 0);
-        bool hasRail = profile == Ribbon && railStyle != 0; // rails only on the open Ribbon profile
+        int railStyle = GetI(data, "rail", RailNone);
+        bool hasRail = profile == Ribbon && railStyle != RailNone; // rails only on the open Ribbon profile
+        // Curb/Bank fold their lip into the swept cross-section; the Fence (posts + beam) can't be a constant
+        // cross-section, so it keeps the plain lane loop and is emitted separately onto the Rail slot below.
+        bool foldedRail = hasRail && railStyle != RailFence;
+        bool fenceRail = hasRail && railStyle == RailFence;
 
         SurfaceTool surface = Begin(), side = Begin(), rail = Begin();
         if (profile == Tube)
@@ -172,12 +183,16 @@ public sealed class PathSweepPrimitive : IPrimitive
             {
                 Channel => ChannelLoop(radius, t, arc, sides),
                 Wall    => WallLoop(t, wallH),
-                _ when hasRail => RibbonRailLoop(width, t, railStyle,
+                _ when foldedRail => RibbonRailLoop(width, t, railStyle,
                                       GetF(data, "railHeight", 0.3f), GetF(data, "railWidth", 0.3f),
                                       GetF(data, "railBankAngle", 45f)),
                 _       => RibbonLoop(width, t),
             };
             Sweep(surface, side, rail, pos, R, U, T, dist, loop, slot, closed);
+
+            if (fenceRail)
+                EmitRibbonFence(rail, pos, R, U, T, dist, width,
+                    GetF(data, "railHeight", 0.3f), GetF(data, "railWidth", 0.3f), closed);
         }
 
         var mesh = new ArrayMesh();
@@ -239,6 +254,66 @@ public sealed class PathSweepPrimitive : IPrimitive
             new Vector2(h, -t),      new Vector2(-h, -t),
         };
         return (curb, new[] { 2, 2, 2, 0, 2, 2, 2, 1, 1, 1 });
+    }
+
+    /// <summary>Elevated rail (fence) for the Ribbon: square posts at ~2.5 m intervals down EACH long edge
+    /// plus a continuous top beam, swept along the path onto the Rail slot. Unlike the curb/bank lips this
+    /// isn't a constant cross-section (the posts are discrete), so it's emitted separately AFTER the lane
+    /// sweep rather than folded into the loop. Post/beam cross-section = railW (clamped so the two edges'
+    /// posts can't meet across the lane); the top beam is flush at railH.</summary>
+    private static void EmitRibbonFence(SurfaceTool rail, Vector3[] pos, Vector3[] R, Vector3[] U, Vector3[] T,
+        float[] dist, float width, float railH, float railW, bool closed)
+    {
+        int stations = pos.Length - 1;
+        float h = width * 0.5f;
+        railW = Mathf.Min(railW, 0.45f * width); // keep posts off the rolling lane (and out of each other)
+        float half = railW * 0.5f;
+        const float spacing = 2.5f;
+
+        foreach (int e in new[] { -1, 1 }) // both long edges (lateral ±h)
+        {
+            float lat = e * h;
+
+            // Posts: one at the start, then every ~spacing metres of path length. On a closed ring skip the
+            // final station (it coincides with station 0 → no doubled post); an open path also caps the end.
+            float since = spacing; // force a post at station 0
+            int last = closed ? stations - 1 : stations;
+            for (int i = 0; i <= last; i++)
+            {
+                if (i > 0) since += dist[i] - dist[i - 1];
+                bool end = !closed && i == stations;
+                if (since < spacing && !end) continue;
+                since = 0f;
+                Vector3 c = pos[i] + lat * R[i] + (railH * 0.5f) * U[i];
+                AddOrientedBox(rail, c, R[i] * half, U[i] * (railH * 0.5f), T[i] * half);
+            }
+
+            // Top beam: a railW×railW square section centred at (lat, railH−half), swept along all stations on
+            // the Rail slot. Passing `rail` for all three Sweep tools keeps every quad (slot 0 → 1st arg) and
+            // end cap (→ 2nd arg) on Rail. Wound CW (top-left, top-right, bottom-right, bottom-left) to match
+            // RibbonLoop's exterior-on-left convention so the beam faces out/up.
+            float cy = railH - half;
+            var beam = new[]
+            {
+                new Vector2(lat - half, cy + half), new Vector2(lat + half, cy + half),
+                new Vector2(lat + half, cy - half), new Vector2(lat - half, cy - half),
+            };
+            Sweep(rail, rail, rail, pos, R, U, T, dist, beam, new[] { 0, 0, 0, 0 }, closed);
+        }
+    }
+
+    /// <summary>Adds a box from a centre and three half-extent axis vectors (any orientation). Each of the 6
+    /// faces is emitted via <see cref="MeshBuilder.AddQuadFacing"/> toward its outward axis, so winding is
+    /// auto-resolved. (Mirrors the polygon floor's fence-post box.)</summary>
+    private static void AddOrientedBox(SurfaceTool st, Vector3 c, Vector3 ax, Vector3 ay, Vector3 az)
+    {
+        Vector3 P(int sx, int sy, int sz) => c + ax * sx + ay * sy + az * sz;
+        MeshBuilder.AddQuadFacing(st, P(1, -1, -1), P(1, 1, -1), P(1, 1, 1), P(1, -1, 1), ax);
+        MeshBuilder.AddQuadFacing(st, P(-1, -1, -1), P(-1, 1, -1), P(-1, 1, 1), P(-1, -1, 1), -ax);
+        MeshBuilder.AddQuadFacing(st, P(-1, 1, -1), P(1, 1, -1), P(1, 1, 1), P(-1, 1, 1), ay);
+        MeshBuilder.AddQuadFacing(st, P(-1, -1, -1), P(1, -1, -1), P(1, -1, 1), P(-1, -1, 1), -ay);
+        MeshBuilder.AddQuadFacing(st, P(-1, -1, 1), P(1, -1, 1), P(1, 1, 1), P(-1, 1, 1), az);
+        MeshBuilder.AddQuadFacing(st, P(-1, -1, -1), P(1, -1, -1), P(1, 1, -1), P(-1, 1, -1), -az);
     }
 
     private static (Vector2[], int[]) WallLoop(float t, float h)
