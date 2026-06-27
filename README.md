@@ -34,13 +34,23 @@ The word "level" is overloaded, so the project uses these names:
 
 ## Features
 
-- **12 parametric primitives**, grouped by category:
-  - **Structure** — Floor, Wall, Curved Wall, Cylinder, Edge Curb
+- **14 parametric primitives**, grouped by category:
+  - **Structure** — Floor, Polygon Floor, Wall, Curved Wall, Cylinder, Edge Curb
   - **Vertical** — Ramp, Stairs, Ramp Plane, Stair Plane
-  - **Curves** — Banked Curve, Half-Pipe, Dome / Bowl
+  - **Curves** — Banked Curve, Half-Pipe, Path Sweep, Dome / Bowl
 - **Openings** — doors and windows as selectable, movable, resizable objects. The wall mesh and
   collision honour N openings via box decomposition (not polygon-with-hole). The hole "applies"
   on deselect and on bake/save.
+- **Polygon floors with holes** — draw a slab with an arbitrary outline (angled rhombus, freeform
+  playfield), edit corners as gizmos, and cut one or more **holes** the ball falls through.
+- **Path Sweep** — sweep a cross-section (ribbon, channel, wall, or tube) along a freeform 3D
+  spline, with per-point height and bank, end-to-end editing handles, and **closed loops** for
+  circuits and loop-the-loops.
+- **Auto-rails** — give a **Polygon Floor** or a **Path Sweep** ribbon edge rails with no extra
+  modeling. Polygon floors rail the outer outline *and* each hole independently
+  (**None / Rail (curb) / Elevated Rail (fence) / Bank**); ribbons rail both long edges
+  (**Rail / Bank**). Height, width, and a **signed bank angle** (leans inward or outward) are
+  adjustable per rail.
 - **Snapping 3D grid** with cell and corner snap modes (toggle with **Tab**).
 - **Multi-storey** documents with per-storey elevation and height; navigate with **+ / −**.
 - **Texture library** — a bundled Kenney prototype pack plus your own images. Apply by
@@ -110,7 +120,8 @@ right **inspector**, and a bottom tab bar with **Primitives / Textures / Project
 | `N` | Window (opening) | `U` | Half-Pipe |
 | `R` | Ramp | `E` | Edge Curb |
 | `L` | Cylinder | `A` | Curved Wall |
-| `O` | Dome / Bowl | | |
+| `O` | Dome / Bowl | `P` | Path Sweep |
+| `Y` | Polygon Floor | `K` | Cut Hole (in selected polygon floor) |
 
 **Actions:**
 
@@ -185,7 +196,7 @@ Source/
   App/            bootstrap; Main.cs builds the entire editor UI in code
   Core/
     Data/         LevelDocument, StoreyData, PrimitiveInstanceData, MaterialLibrary (Resources)
-    Primitives/   IPrimitive, PrimitiveRegistry + the 12 primitive types
+    Primitives/   IPrimitive, PrimitiveRegistry + the 14 primitive types
     Geometry/     SurfaceTool/ArrayMesh helpers, wall box-decomposition
     Grid/         grid model + snapping
     Build/        SceneBaker (.tscn), MaterialResolver, save/load (.tres)

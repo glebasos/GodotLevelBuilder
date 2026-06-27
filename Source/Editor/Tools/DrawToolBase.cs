@@ -40,6 +40,15 @@ public abstract class DrawToolBase : ITool
     /// <summary>Clear any in-progress draw state (e.g. the pending start point).</summary>
     protected abstract void ResetState();
 
+    /// <summary>
+    /// Anchors a fixed-width strip to the drawn line for width-based tools (ramp/stairs/planes). The mesh is
+    /// built centred on local Z=0, so by default we shift the centre perpendicular by half-width — the drawn
+    /// line becomes the strip's near EDGE (it sits on the adjacent tiles). When <see cref="EditorContext.WidthFromCenter"/>
+    /// is on, the line stays the centreline (no shift), so mirror-image draws come out symmetric.
+    /// </summary>
+    protected Vector3 AnchorWidth(Vector3 mid, Basis basis, float width)
+        => Ctx.WidthFromCenter ? mid : mid + basis.Z * (width * 0.5f);
+
     protected void ShowPreview(ArrayMesh mesh, Transform3D worldTransform)
     {
         if (_preview == null)

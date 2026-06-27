@@ -37,6 +37,15 @@ public sealed class EditorContext
 
     /// <summary>Default wall/ramp/stairs height for freshly drawn primitives (no per-layer height needed).</summary>
     public float DefaultStoreyHeight => Document.DefaultStoreyHeight;
+
+    /// <summary>
+    /// How width-based draw tools (ramp, ramp plane, stairs, stair plane) anchor their fixed width to the
+    /// two-click line. False (default): the line is the near EDGE — the strip sits on the adjacent tiles
+    /// (matches the original grid-aligned behaviour). True: the line is the CENTRELINE — the strip
+    /// straddles it, so mirror-image draws come out symmetric. Session-only view state (not undoable, not
+    /// saved with the document); toggled from the Primitives palette.
+    /// </summary>
+    public bool WidthFromCenter { get; set; }
     public PrimitiveRegistry Registry { get; init; }
     public CommandStack Commands { get; init; }
     public LevelView View { get; init; }

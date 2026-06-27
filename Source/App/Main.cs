@@ -157,7 +157,7 @@ public partial class Main : Node3D
         var heightIndicator = new HeightIndicatorPanel();
         viewportContainer.AddChild(heightIndicator);
         heightIndicator.Setup(ctx);
-        palette.Setup(registry, tools); // after tools.Setup so the primitive->tool map exists
+        palette.Setup(registry, tools, ctx); // after tools.Setup so the primitive->tool map exists
         textures.Setup();
         project.Setup(ctx, config, textures.Refresh, ConfirmIfDirty); // Change-workspace repopulates the texture palette
         statusBar.Setup(ctx, tools);

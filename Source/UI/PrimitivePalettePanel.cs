@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using LevelBuilder.Core.Primitives;
+using LevelBuilder.Editor.Session;
 using LevelBuilder.Editor.Tools;
 
 namespace LevelBuilder.UI;
@@ -39,7 +40,7 @@ public partial class PrimitivePalettePanel : MarginContainer
     private readonly Dictionary<string, Button> _buttonsById = new();
     private bool _suppressSignal;
 
-    public void Setup(PrimitiveRegistry registry, ToolManager tools)
+    public void Setup(PrimitiveRegistry registry, ToolManager tools, EditorContext ctx)
     {
         _tools = tools;
 
@@ -55,6 +56,8 @@ public partial class PrimitivePalettePanel : MarginContainer
 
         var rows = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         scroll.AddChild(rows);
+
+        rows.AddChild(MakeWidthAnchorRow(ctx));
 
         IEnumerable<Entry> entries = registry.All
             .Select(p => new Entry(p.TypeId, p.DisplayName, p.Category))
@@ -80,6 +83,39 @@ public partial class PrimitivePalettePanel : MarginContainer
     public override void _ExitTree()
     {
         if (_tools != null) _tools.ActiveToolIdChanged -= OnActiveToolIdChanged;
+    }
+
+    /// <summary>
+    /// "Draw from" dropdown controlling how the width-based tools (ramp, ramp plane, stairs, stair plane)
+    /// anchor their fixed width to the two-click line: Edge (default — the line is the near edge, sits on the
+    /// adjacent tiles) or Center (the line is the centreline, so mirror-image draws come out symmetric).
+    /// Session-only; writes straight to <see cref="EditorContext.WidthFromCenter"/>.
+    /// </summary>
+    private HBoxContainer MakeWidthAnchorRow(EditorContext ctx)
+    {
+        var row = new HBoxContainer();
+
+        var label = new Label
+        {
+            Text = "Draw width from:",
+            TooltipText = "How ramps/stairs anchor their width to the drawn line.",
+            MouseFilter = MouseFilterEnum.Stop,
+        };
+        row.AddChild(label);
+
+        var option = new OptionButton
+        {
+            FocusMode = FocusModeEnum.None, // don't swallow tool hotkeys once clicked
+            TooltipText = "Edge: the line is the strip's near edge (sits on adjacent tiles).\n"
+                + "Center: the line is the centreline (symmetric mirror-image draws).",
+        };
+        option.AddItem("Edge", 0);
+        option.AddItem("Center", 1);
+        option.Select(ctx.WidthFromCenter ? 1 : 0);
+        option.ItemSelected += index => ctx.WidthFromCenter = index == 1;
+        row.AddChild(option);
+
+        return row;
     }
 
     private Button MakeButton(Entry e)
