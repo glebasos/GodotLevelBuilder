@@ -1,12 +1,12 @@
-[gd_resource type="Resource" script_class="LevelDocument" format=3]
+[gd_resource type="Resource" script_class="LevelDocument" format=3 uid="uid://b10nysw2akggo"]
 
-[ext_resource type="Script" path="res://Source/Core/Data/GridSettings.cs" id="1_rnyu1"]
-[ext_resource type="Script" path="res://Source/Core/Data/MaterialEntry.cs" id="2_omqq1"]
-[ext_resource type="Script" path="res://Source/Core/Data/MaterialLibrary.cs" id="3_njlsy"]
-[ext_resource type="Script" path="res://Source/Core/Data/StoreyData.cs" id="4_2t56k"]
-[ext_resource type="Script" path="res://Source/Core/Data/PrimitiveInstanceData.cs" id="5_cr5uv"]
-[ext_resource type="Script" path="res://Source/Core/Data/OpeningData.cs" id="6_rtoe4"]
-[ext_resource type="Script" path="res://Source/Core/Data/LevelDocument.cs" id="7_x8n02"]
+[ext_resource type="Script" uid="uid://c8t13t4n56db8" path="res://Source/Core/Data/GridSettings.cs" id="1_rnyu1"]
+[ext_resource type="Script" uid="uid://bps7qir4x4flo" path="res://Source/Core/Data/MaterialEntry.cs" id="2_omqq1"]
+[ext_resource type="Script" uid="uid://b01s4dnfvl5ra" path="res://Source/Core/Data/MaterialLibrary.cs" id="3_njlsy"]
+[ext_resource type="Script" uid="uid://dvpmrreekouvl" path="res://Source/Core/Data/StoreyData.cs" id="4_2t56k"]
+[ext_resource type="Script" uid="uid://br8baso3ymdki" path="res://Source/Core/Data/PrimitiveInstanceData.cs" id="5_cr5uv"]
+[ext_resource type="Script" uid="uid://dc3cvrc5kogfv" path="res://Source/Core/Data/OpeningData.cs" id="6_rtoe4"]
+[ext_resource type="Script" uid="uid://d3yw0h3hb2wg1" path="res://Source/Core/Data/LevelDocument.cs" id="7_x8n02"]
 
 [sub_resource type="Resource" id="Resource_63o70"]
 script = ExtResource("1_rnyu1")

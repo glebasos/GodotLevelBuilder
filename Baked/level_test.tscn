@@ -1,0 +1,46 @@
+[gd_scene format=4 uid="uid://sehm6d2oqu8c"]
+
+[ext_resource type="Material" uid="uid://bm4qv7kajmn5a" path="res://Assets/Materials/floor_top.tres" id="1_sbvne"]
+
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_igdui"]
+data = PackedVector3Array(-3, 0, -2, -3, 0, 2, 3, 0, 2, -3, 0, -2, 3, 0, 2, 3, 0, -2, -3, -0.19999999, -2, 3, -0.19999999, -2, 3, -0.19999999, 2, -3, -0.19999999, -2, 3, -0.19999999, 2, -3, -0.19999999, 2, -3, 0, -2, 3, 0, -2, 3, -0.19999999, -2, -3, 0, -2, 3, -0.19999999, -2, -3, -0.19999999, -2, 3, 0, 2, -3, 0, 2, -3, -0.19999999, 2, 3, 0, 2, -3, -0.19999999, 2, 3, -0.19999999, 2, -3, 0, 2, -3, 0, -2, -3, -0.19999999, -2, -3, 0, 2, -3, -0.19999999, -2, -3, -0.19999999, 2, 3, 0, -2, 3, 0, 2, 3, -0.19999999, 2, 3, 0, -2, 3, -0.19999999, 2, 3, -0.19999999, -2)
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_g5ua7"]
+_surfaces = [{
+"aabb": AABB(-3, 0, -2, 6, 1e-05, 4),
+"attribute_data": PackedByteArray("AAAAAAAAAAAAAIBAAAAAAAAAgEAAAMBAAAAAAAAAAAAAAIBAAADAQAAAAAAAAMBA"),
+"format": 34359738391,
+"material": ExtResource("1_sbvne"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 6,
+"vertex_data": PackedByteArray("AABAwAAAAAAAAADAAABAwAAAAAAAAABAAABAQAAAAAAAAABAAABAwAAAAAAAAADAAABAQAAAAAAAAABAAABAQAAAAAAAAADA/3////9//z//f////3//P/9/////f/8//3////9//z//f////3//P/9/////f/8/")
+}, {
+"aabb": AABB(-3, -0.2, -2, 6, 1e-05, 4),
+"attribute_data": PackedByteArray("AAAAAAAAAAAAAMBAAAAAAAAAwEAAAIBAAAAAAAAAAAAAAMBAAACAQAAAAAAAAIBA"),
+"format": 34359738391,
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 6,
+"vertex_data": PackedByteArray("AABAwM3MTL4AAADAAABAQM3MTL4AAADAAABAQM3MTL4AAABAAABAwM3MTL4AAADAAABAQM3MTL4AAABAAABAwM3MTL4AAABA/38AAP///z//fwAA////P/9/AAD///8//38AAP///z//fwAA////P/9/AAD///8/")
+}, {
+"aabb": AABB(-3, -0.2, -2, 6, 0.2, 4),
+"attribute_data": PackedByteArray("AAAAAAAAAAAAAMBAAAAAAAAAwEDNzEw+AAAAAAAAAAAAAMBAzcxMPgAAAADNzEw+AAAAAAAAAAAAAMBAAAAAAAAAwEDNzEw+AAAAAAAAAAAAAMBAzcxMPgAAAADNzEw+AAAAAAAAAAAAAIBAAAAAAAAAgEDNzEw+AAAAAAAAAAAAAIBAzcxMPgAAAADNzEw+AAAAAAAAAAAAAIBAAAAAAAAAgEDNzEw+AAAAAAAAAAAAAIBAzcxMPgAAAADNzEw+"),
+"format": 34359738391,
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 24,
+"vertex_data": PackedByteArray("AABAwAAAAAAAAADAAABAQAAAAAAAAADAAABAQM3MTL4AAADAAABAwAAAAAAAAADAAABAQM3MTL4AAADAAABAwM3MTL4AAADAAABAQAAAAAAAAABAAABAwAAAAAAAAABAAABAwM3MTL4AAABAAABAQAAAAAAAAABAAABAwM3MTL4AAABAAABAQM3MTL4AAABAAABAwAAAAAAAAABAAABAwAAAAAAAAADAAABAwM3MTL4AAADAAABAwAAAAAAAAABAAABAwM3MTL4AAADAAABAwM3MTL4AAABAAABAQAAAAAAAAADAAABAQAAAAAAAAABAAABAQM3MTL4AAABAAABAQAAAAAAAAADAAABAQM3MTL4AAABAAABAQM3MTL4AAADA/////////z//////////P/////////8//////////z//////////P/////////8//3//fwAA/z//f/9/AAD/P/9//38AAP8//3//fwAA/z//f/9/AAD/P/9//38AAP8/AAD/f///AAAAAP9///8AAAAA/3///wAAAAD/f///AAAAAP9///8AAAAA/3///wAA////f/9//z////9//3//P////3//f/8/////f/9//z////9//3//P////3//f/8/")
+}]
+
+[node name="Test Level" type="Node3D" unique_id=142495024]
+
+[node name="Storey_cde7bdcc" type="Node3D" parent="." unique_id=660332491]
+
+[node name="Collision_cde7bdcc" type="StaticBody3D" parent="Storey_cde7bdcc" unique_id=1632410347]
+
+[node name="Shape_5a12f90a_0" type="CollisionShape3D" parent="Storey_cde7bdcc/Collision_cde7bdcc" unique_id=254105275]
+shape = SubResource("ConcavePolygonShape3D_igdui")
+
+[node name="Mesh_5a12f90a" type="MeshInstance3D" parent="Storey_cde7bdcc" unique_id=1168767390]
+mesh = SubResource("ArrayMesh_g5ua7")
