@@ -10,6 +10,7 @@
     <Content Include="docs\CONVENTIONS.md" />
     <Content Include="docs\DATA_MODEL.md" />
     <Content Include="docs\EXPORT.md" />
+    <Content Include="docs\IMPROVEMENT_PLAN.md" />
     <Content Include="docs\PLANNED_OPENINGS_AS_OBJECTS.md" />
     <Content Include="docs\PRIMITIVES.md" />
     <Content Include="docs\ROADMAP.md" />
