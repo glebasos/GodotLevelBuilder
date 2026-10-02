@@ -14,6 +14,14 @@ game; project at `E:\Projects\Godot\SuperCorgiBall`, branch `level-builder-integ
 | Start | `T` | `spawn` | yaw, drop height, time limit, fall-out depth | `Marker3D`, `scb_kind="spawn"`, `scb_drop` |
 | Goal  | `X` | `goal`  | yaw | `Marker3D`, `scb_kind="goal"` |
 | Bone  | `B` | `bone`  | yaw, height | `Marker3D`, `scb_kind="bone"` (lifted by height) |
+| Moving Platform | `M` | `platform` | yaw, width/depth/thickness, moveX/Y/Z (local), period, spin °/s, phase | `Marker3D` + `Mesh` child; `scb_move` (Vector3), `scb_period`, `scb_spin`, `scb_phase` |
+| Bumper | `V` | `bumper` | yaw, radius, height, sides, kick m/s | `Marker3D` + `Mesh` child; `scb_strength` |
+| Conveyor | `Q` | `conveyor` | yaw, width, length, speed m/s | `Marker3D`; `scb_size` (Vector2 w, length), `scb_speed` |
+
+Platform and bumper are `GeometryMarkerPrimitive`s: they borrow Floor / Cylinder geometry (textured, with
+material slots) and bake it as a `Mesh` child of their marker (embedded textures on export). Their lowest
+point at both ends of a platform's travel counts toward `scb_fall_out_y`. The game fits colliders to the
+mesh AABB (box / cylinder) — keep platform/bumper meshes box/cylinder-shaped.
 
 Markers are ordinary `PrimitiveInstanceData` (select / move / undo / save all work), implemented as
 `MarkerPrimitive` subclasses with no material slots. In the editor they draw a coloured proxy; the
@@ -47,6 +55,9 @@ Both bake modes (per-object and merged) append, only if the level has markers:
   `Bone`, and hands spawn + settings to `LevelController` (`ApplyTo`, `PlaceBall`).
 - `LevelController` — calls the above in `_Ready`; new `FallOutEnabled` / `FallOutY` /
   `FallOutResetDelay` (ball below the height in pivot-local space → reset after a delay).
+- `Models/Objects/{MovingPlatform,Bumper,Conveyor}.cs` — built in code by `BuilderLevel` from those markers
+  (no scenes); `BuilderMeshes.AdoptMesh` moves the baked mesh under the body. Platforms move via their
+  LOCAL transform so they tilt with the stage. `LevelController` shows a "FALL OUT!" banner while falling.
 - `BallCamera.SnapBehindTarget(yaw)` — starts the camera behind the ball facing the Start arrow.
 - `Scenes/Levels/BuilderLevelTemplate.tscn` — generic level (controller, pivot, Stage, PlayerHolder,
   minimap, sky). **New level =** New Inherited Scene from it → set `PivotController/Stage.Level` to the
@@ -71,4 +82,4 @@ Both bake modes (per-object and merged) append, only if the level has markers:
   settings) + glTF mesh (`GLTFDocument` at runtime), collision rebuilt from the mesh. Verify runtime glTF
   in Godot 4.7 first. Note builder = net10.0, game = net8.0 if Core code is ever shared.
 - Rotate gizmo for marker yaw (currently inspector only).
-- More gameplay pieces: bumpers, moving/rotating platforms, conveyor, goal variants, "FALL OUT" UI.
+- More pieces: goal variants, switches, wind/fans, ice/sticky floors.
