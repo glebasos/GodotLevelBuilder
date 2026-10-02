@@ -81,5 +81,5 @@ Both bake modes (per-object and merged) append, only if the level has markers:
   can carry scripts, so shared levels must use a **data-only** format the game parses: JSON (markers +
   settings) + glTF mesh (`GLTFDocument` at runtime), collision rebuilt from the mesh. Verify runtime glTF
   in Godot 4.7 first. Note builder = net10.0, game = net8.0 if Core code is ever shared.
-- Rotate gizmo for marker yaw (currently inspector only).
+- ~~Rotate gizmo for marker yaw~~ — done: pink `YawHandle` on every marker, 15° snap.
 - More pieces: goal variants, switches, wind/fans, ice/sticky floors.

@@ -21,6 +21,20 @@ public static class InstanceHandleProvider
         // World transform of the instance (basis + storey-local origin + storey elevation).
         var world = new Transform3D(inst.LocalTransform.Basis, inst.LocalTransform.Origin + elevationOffset);
 
+        // Gameplay markers (Start, Goal, platforms …) turn with a yaw ring handle; the arm reaches past the
+        // piece's footprint so the widget isn't buried inside it.
+        if (prim is MarkerPrimitive)
+        {
+            float reach = prim.TypeId switch
+            {
+                "goal" => 3.4f,
+                "platform" or "conveyor" => Mathf.Max(GetF(inst, "width", 4f), GetF(inst, "depth", 4f)) * 0.5f + 0.8f,
+                "bumper" => GetF(inst, "radius", 0.8f) + 0.8f,
+                _ => 2.2f,
+            };
+            handles.Add(new YawHandle(inst, world.Origin, reach));
+        }
+
         switch (prim.TypeId)
         {
             case "path_sweep":
