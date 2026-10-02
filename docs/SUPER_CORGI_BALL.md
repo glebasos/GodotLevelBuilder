@@ -56,7 +56,7 @@ Both bake modes (per-object and merged) append, only if the level has markers:
 - `LevelController` — calls the above in `_Ready`; new `FallOutEnabled` / `FallOutY` /
   `FallOutResetDelay` (ball below the height in pivot-local space → reset after a delay).
 - `Models/Objects/{MovingPlatform,Bumper,Conveyor}.cs` — built in code by `BuilderLevel` from those markers
-  (no scenes); `BuilderMeshes.AdoptMesh` moves the baked mesh under the body. Platforms move via their
+  (no scenes); `BuilderMeshes.AdoptMesh` moves the baked mesh under the body. Platforms (StaticBody3D, ball carried positionally via `CarryDelta`) move via their
   LOCAL transform so they tilt with the stage. `LevelController` shows a "FALL OUT!" banner while falling.
 - `BallCamera.SnapBehindTarget(yaw)` — starts the camera behind the ball facing the Start arrow.
 - `Scenes/Levels/BuilderLevelTemplate.tscn` — generic level (controller, pivot, Stage, PlayerHolder,

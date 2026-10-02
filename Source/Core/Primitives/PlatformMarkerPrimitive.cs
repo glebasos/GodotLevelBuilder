@@ -6,7 +6,7 @@ namespace LevelBuilder.Core.Primitives;
 
 /// <summary>
 /// A moving / spinning platform (Super Corgi Ball): a floor slab (top at the marker, extending down by
-/// <c>thickness</c>) that the game turns into an AnimatableBody3D. It eases from its placed pose to
+/// <c>thickness</c>) that the game turns into a moving StaticBody3D (the ball is carried positionally). It eases from its placed pose to
 /// <c>move</c> (marker-local metres, so it follows the facing) and back every <c>period</c> seconds, and
 /// spins at <c>spin</c> degrees/s about its own up axis. <c>phase</c> (0..1) offsets the cycle so
 /// neighbours can be staggered. The editor shows the travel as a rod to a small cube at the far end.
