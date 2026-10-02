@@ -10,18 +10,29 @@ namespace LevelBuilder.Editor.Camera;
 ///   • Press 7                  → toggle orthographic top-down view (Blender numpad-7),
 ///                                 looking straight down for laying out the floor plan
 ///                                 (start orbiting to drop back out of it, like Blender)
+///   • Press . (period/numpad .)  → frame the selection (falls back to the whole level)
+///   • Press Home                 → frame the whole level
 ///
 /// This node IS the focus pivot: its Position is the look-at target, its rotation
 /// is the orbit, and the child Camera3D sits back along local +Z at <see cref="Distance"/>.
 /// </summary>
 public partial class EditorCameraRig : Node3D
 {
-    [Export] public float Distance { get; set; } = 18f;
+    [Export] public float Distance { get; set; } = DefaultDistance;
     [Export] public float MinDistance { get; set; } = 1f;
     [Export] public float MaxDistance { get; set; } = 500f;
     [Export] public float OrbitSensitivity { get; set; } = 0.01f;
     [Export] public float PanSensitivity { get; set; } = 0.0015f;
     [Export] public float ZoomStep { get; set; } = 0.1f;
+
+    /// <summary>
+    /// World bounds to frame: called with <c>all=false</c> for the selection, <c>true</c> for the whole
+    /// level; null = nothing there. Injected by Main so the camera stays free of editor-session types.
+    /// </summary>
+    public System.Func<bool, Aabb?> BoundsProvider { get; set; }
+
+    private const float DefaultDistance = 18f;
+    private const float FramePadding = 1.25f; // breathing room around the framed bounds
 
     private float _yaw = Mathf.DegToRad(-45f);
     private float _pitch = Mathf.DegToRad(-35f);
@@ -48,6 +59,14 @@ public partial class EditorCameraRig : Node3D
         {
             case InputEventKey { Pressed: true, Echo: false, Keycode: Key.Key7 or Key.Kp7 }:
                 ToggleTopDown();
+                break;
+            case InputEventKey { Pressed: true, Echo: false, Keycode: Key.Period or Key.KpPeriod }:
+                FrameSelection();
+                GetViewport().SetInputAsHandled();
+                break;
+            case InputEventKey { Pressed: true, Echo: false, Keycode: Key.Home }:
+                FrameAll();
+                GetViewport().SetInputAsHandled();
                 break;
             case InputEventMouseButton mb:
                 HandleButton(mb);
@@ -76,6 +95,45 @@ public partial class EditorCameraRig : Node3D
             _pitch = _savedPitch;
             _topDown = false;
         }
+        Apply();
+    }
+
+    /// <summary>Frames the selection; with nothing selected, the whole level (then the origin).</summary>
+    public void FrameSelection() => Frame(BoundsProvider?.Invoke(false) ?? BoundsProvider?.Invoke(true));
+
+    /// <summary>Frames every object in the level (or resets to the origin when the level is empty).</summary>
+    public void FrameAll() => Frame(BoundsProvider?.Invoke(true));
+
+    /// <summary>
+    /// Re-centres the orbit pivot on <paramref name="bounds"/> and pulls the camera back until it fits,
+    /// keeping the current view direction. Top-down frames the XZ footprint (Distance drives the
+    /// orthographic Size there); perspective fits the bounding sphere in the vertical FOV.
+    /// </summary>
+    private void Frame(Aabb? bounds)
+    {
+        if (bounds == null)
+        {
+            Position = Vector3.Zero;
+            Distance = DefaultDistance;
+            Apply();
+            return;
+        }
+
+        Aabb box = bounds.Value;
+        Position = box.GetCenter();
+        float distance;
+        if (_topDown)
+        {
+            // Ortho Size is the vertical extent; pad both footprint axes so wide aspect + tall both fit,
+            // and keep the camera above the box's top.
+            distance = Mathf.Max(Mathf.Max(box.Size.X, box.Size.Z) * FramePadding, box.Size.Y);
+        }
+        else
+        {
+            float radius = box.Size.Length() * 0.5f;
+            distance = radius * FramePadding / Mathf.Sin(Mathf.DegToRad(_camera.Fov * 0.5f));
+        }
+        Distance = Mathf.Clamp(distance, Mathf.Max(MinDistance, 2f), MaxDistance);
         Apply();
     }
 

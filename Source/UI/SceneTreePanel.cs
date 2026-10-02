@@ -271,14 +271,11 @@ public partial class SceneTreePanel : PanelContainer
         return $"{name}  ({s.BaseElevation:0.##} m){(active ? "  ●" : "")}";
     }
 
-    private static string InstanceLabel(PrimitiveInstanceData inst)
-    {
-        string type = string.IsNullOrEmpty(inst.PrimitiveType) ? "primitive" : inst.PrimitiveType;
-        return $"{char.ToUpperInvariant(type[0])}{type[1..]}  ({Short(inst.Id)})";
-    }
+    private string InstanceLabel(PrimitiveInstanceData inst)
+        => $"{UiFactory.TypeLabel(_ctx.Registry, inst.PrimitiveType)}  ({Short(inst.Id)})";
 
     private static string OpeningLabel(OpeningData o)
-        => $"{(o.SillHeight > 0 ? "Window" : "Door")}  ({Short(o.Id)})";
+        => $"{UiFactory.OpeningLabel(o)}  ({Short(o.Id)})";
 
     /// <summary>Last 4 chars of an id, for a compact disambiguator (tree rows stay narrow).</summary>
     private static string Short(string id) => UiFactory.ShortId(id, 4);

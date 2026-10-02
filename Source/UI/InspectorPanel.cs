@@ -28,6 +28,8 @@ public partial class InspectorPanel : PanelContainer
     private Label _title;
     private Label _details;
     private TextureDropZone _texture;
+    private Control _textureHeader;
+    private Control _textureSeparator;
     private HBoxContainer _tilingRow;
     private SpinBox _tilingSpin;
     private HBoxContainer _tintRow;
@@ -49,9 +51,19 @@ public partial class InspectorPanel : PanelContainer
         _ctx = ctx;
         CustomMinimumSize = new Vector2(UiConstants.InspectorWidth, 0);
 
-        var margin = new MarginContainer();
+        // Scroll vertically so a long parameter list (e.g. path sweep) doesn't overflow the dock or
+        // force the window's minimum height. Horizontal scroll is off: the width stays pinned by
+        // CustomMinimumSize above, and every label autowraps (see _details below).
+        var scroll = new ScrollContainer
+        {
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            SizeFlagsVertical = SizeFlags.ExpandFill,
+        };
+        AddChild(scroll);
+
+        var margin = new MarginContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         UiFactory.ApplyMargin(margin, 10);
-        AddChild(margin);
+        scroll.AddChild(margin);
 
         var body = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         margin.AddChild(body);
@@ -67,8 +79,10 @@ public partial class InspectorPanel : PanelContainer
         _details = new Label { Modulate = new Color(1, 1, 1, 0.7f), AutowrapMode = TextServer.AutowrapMode.WordSmart };
         body.AddChild(_details);
 
-        body.AddChild(new HSeparator());
-        body.AddChild(new Label { Text = "Texture", Modulate = new Color(1, 1, 1, 0.6f) });
+        _textureSeparator = new HSeparator();
+        body.AddChild(_textureSeparator);
+        _textureHeader = new Label { Text = "Texture", Modulate = new Color(1, 1, 1, 0.6f) };
+        body.AddChild(_textureHeader);
 
         _texture = new TextureDropZone();
         body.AddChild(_texture);
@@ -171,29 +185,40 @@ public partial class InspectorPanel : PanelContainer
         if (_ctx.SelectedId == null)
         {
             _title.Text = "No selection";
-            _details.Text = "Select an object to see its properties.";
-            _texture.Display(null, "—");
+            _details.Text = "Click an object in the view or the Scene list to see its properties.";
+            ShowTextureSection(false);
             return;
         }
 
         if (_ctx.SelectedOpeningId != null)
         {
             OpeningData o = SelectedOpening();
-            _title.Text = o != null && o.SillHeight > 0 ? "Window" : "Opening";
+            _title.Text = UiFactory.OpeningLabel(o); // same naming as the Scene tree
             _details.Text = o != null ? $"id {Short(o.Id)}" : "";
-            _texture.Display(null, "—"); // texturing openings isn't supported yet
+            ShowTextureSection(false); // texturing openings isn't supported yet
             return;
         }
 
         PrimitiveInstanceData inst = _ctx.GetInstance(_ctx.SelectedId);
-        if (inst == null) { _title.Text = "No selection"; _details.Text = ""; _texture.Display(null, "—"); return; }
+        if (inst == null) { _title.Text = "No selection"; _details.Text = ""; ShowTextureSection(false); return; }
 
-        string type = string.IsNullOrEmpty(inst.PrimitiveType) ? "Object" : inst.PrimitiveType;
-        _title.Text = $"{char.ToUpperInvariant(type[0])}{type[1..]}";
-        _details.Text = $"id {Short(inst.Id)}";
+        _title.Text = UiFactory.TypeLabel(_ctx.Registry, inst.PrimitiveType);
+        int count = _ctx.SelectedIds.Count;
+        _details.Text = count > 1
+            ? $"id {Short(inst.Id)}  ·  {count} selected\nFields edit this one; a dropped texture applies to all."
+            : $"id {Short(inst.Id)}";
+        ShowTextureSection(true);
 
         (Texture2D tex, string caption) = CurrentTexture(inst);
         _texture.Display(tex, caption);
+    }
+
+    private void ShowTextureSection(bool show)
+    {
+        _textureSeparator.Visible = show;
+        _textureHeader.Visible = show;
+        _texture.Visible = show;
+        if (!show) _texture.Display(null, "—");
     }
 
     // ---- property rows ---------------------------------------------------

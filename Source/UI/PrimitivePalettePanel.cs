@@ -22,9 +22,13 @@ public partial class PrimitivePalettePanel : MarginContainer
     /// <summary>A clickable palette item: a tool id (see <see cref="ToolManager"/>) + how to label/group it.</summary>
     private readonly record struct Entry(string Id, string Label, string Category);
 
-    // Openings aren't registry primitives (they attach to walls via OpeningTool) — list them here.
-    private static readonly Entry[] OpeningEntries =
+    // Non-primitive tools: Select + cut-hole (edit tools), and the openings (which attach to walls via
+    // OpeningTool rather than being registry primitives). Without these, Select and Cut Hole were only
+    // reachable by hotkey.
+    private static readonly Entry[] ExtraEntries =
     {
+        new("select", "Select", "Tools"),
+        new("cut_hole", "Cut Hole", "Tools"),
         new("door", "Door", "Openings"),
         new("window", "Window", "Openings"),
     };
@@ -32,7 +36,7 @@ public partial class PrimitivePalettePanel : MarginContainer
     // Lower sorts first; unknown categories fall to the end but keep a stable alphabetical order.
     private static readonly Dictionary<string, int> CategoryOrder = new()
     {
-        { "Structure", 0 }, { "Openings", 1 }, { "Vertical", 2 }, { "Curves", 3 },
+        { "Tools", -1 }, { "Structure", 0 }, { "Openings", 1 }, { "Vertical", 2 }, { "Curves", 3 },
     };
 
     private ToolManager _tools;
@@ -61,7 +65,7 @@ public partial class PrimitivePalettePanel : MarginContainer
 
         IEnumerable<Entry> entries = registry.All
             .Select(p => new Entry(p.TypeId, p.DisplayName, p.Category))
-            .Concat(OpeningEntries);
+            .Concat(ExtraEntries);
 
         foreach (IGrouping<string, Entry> category in entries
                      .GroupBy(e => e.Category)
@@ -73,11 +77,13 @@ public partial class PrimitivePalettePanel : MarginContainer
             var flow = new HFlowContainer();
             rows.AddChild(flow);
 
-            foreach (Entry e in category.OrderBy(e => e.Label))
+            // "Tools" keeps its declared order (Select first); primitive groups sort alphabetically.
+            foreach (Entry e in category.Key == "Tools" ? category.AsEnumerable() : category.OrderBy(e => e.Label))
                 flow.AddChild(MakeButton(e));
         }
 
         _tools.ActiveToolIdChanged += OnActiveToolIdChanged;
+        OnActiveToolIdChanged(_tools.ActiveToolId); // the initial tool (Select) was activated before we subscribed
     }
 
     public override void _ExitTree()
@@ -123,12 +129,12 @@ public partial class PrimitivePalettePanel : MarginContainer
         string hotkey = _tools.HotkeyFor(e.Id);
         var button = new Button
         {
-            Text = e.Label,
+            Text = hotkey != null ? $"{e.Label}  ({hotkey})" : e.Label, // hotkey on the button teaches the shortcut
             ToggleMode = true,
             ButtonGroup = _group,
             FocusMode = FocusModeEnum.None, // don't let a pressed button eat tool hotkeys
             CustomMinimumSize = UiConstants.ButtonMin,
-            TooltipText = hotkey != null ? $"{e.Label} ({hotkey})" : e.Label,
+            TooltipText = ToolManager.HintFor(e.Id) ?? e.Label,
         };
         string id = e.Id;
         button.Pressed += () => { if (!_suppressSignal) _tools.ActivateToolById(id); };

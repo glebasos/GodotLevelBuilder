@@ -4,7 +4,7 @@ namespace LevelBuilder.UI;
 
 /// <summary>
 /// F1 hotkey cheat sheet: a dimmed full-screen overlay with the complete tool/command reference
-/// (previously only a one-time console print). Click anywhere (or F1 again) to dismiss. Hidden by
+/// (previously only a one-time console print). Click anywhere, Esc, or F1 again to dismiss. Hidden by
 /// default; while hidden it ignores mouse input entirely.
 /// </summary>
 public partial class HelpOverlay : Control
@@ -38,12 +38,15 @@ public partial class HelpOverlay : Control
         ("LMB", "Draw / select / drag handles"),
         ("Esc / RMB", "Cancel current draw"),
         ("Delete", "Delete selection"),
-        ("Ctrl+Z / Ctrl+Y", "Undo / redo"),
+        ("Ctrl+Z", "Undo"),
+        ("Ctrl+Y / Ctrl+Shift+Z", "Redo"),
         ("Ctrl+S", "Save level (.tres)"),
         ("Ctrl+B", "Bake .tscn"),
         ("+ / −", "Layer up / down"),
         ("Tab", "Cell / corner snap"),
         ("7", "Top-down view toggle"),
+        (".", "Frame selection (or everything)"),
+        ("Home", "Frame whole level"),
         ("MMB / Shift+MMB", "Orbit / pan camera"),
         ("Mouse wheel", "Zoom"),
         ("F1", "This help"),
@@ -77,6 +80,17 @@ public partial class HelpOverlay : Control
     }
 
     public void Toggle() => Visible = !Visible;
+
+    public override void _Input(InputEvent e)
+    {
+        // Esc closes the sheet. Handled in _Input (before the 3D view's _UnhandledInput) and consumed,
+        // so the same press doesn't also cancel an in-progress draw underneath.
+        if (Visible && e is InputEventKey { Pressed: true, Keycode: Key.Escape })
+        {
+            Visible = false;
+            GetViewport().SetInputAsHandled();
+        }
+    }
 
     public override void _GuiInput(InputEvent e)
     {

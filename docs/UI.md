@@ -26,9 +26,9 @@ Control "UiRoot"  (full rect, Theme = UiTheme.Build() — the app-wide dark them
 │   │       ├─ PrimitivePalettePanel   "Primitives"  (draw tools, grouped by category)
 │   │       ├─ TexturePalettePanel     "Textures"    (the texture library — drag sources)
 │   │       └─ ProjectPanel            "Project"     (workspace, New/Open/Save, bake + export-to-game)
-│   └─ StatusBar               active tool · draw height · selection count · controls hint
+│   └─ StatusBar               active tool · draw height · selection count · active tool's how-to hint
 ├─ ToastLayer                  bottom-right notifications (MouseFilter Ignore — never blocks input)
-└─ HelpOverlay                 F1 hotkey cheat sheet (hidden by default; click closes)
+└─ HelpOverlay                 F1 hotkey cheat sheet (hidden by default; click or Esc closes)
 ```
 
 `TabContainer` uses each child's `Name` as the tab title.
@@ -50,6 +50,21 @@ Menu items show their shortcuts **cosmetically in the label** but do not registe
 A real `PopupMenu` accelerator fires even while a SpinBox/LineEdit has focus, which would e.g.
 delete the selected *object* while editing text. The one exception is **F1** (Help → Hotkey
 Reference): nothing else owns it, so it is a real accelerator and works regardless of focus.
+
+Edit → Undo / Redo / Delete are greyed out when unavailable — evaluated on the popup's `AboutToPopup`
+(not on `EditorContext.Changed`, which fires per drag frame). View → Frame Selection (`.`) / Frame All
+(`Home`) call `EditorCameraRig.FrameSelection/FrameAll`; the rig owns those keys itself (like `7`) and
+gets world bounds from an injected `BoundsProvider` (`EditorContext.Bounds`, computed from BuildMesh
+AABBs) so `Editor/Camera` stays free of session types. Ctrl+Shift+Z is a redo alias in `ToolManager`.
+
+### Startup tool & status-bar hints
+
+`ToolManager.Setup` ends by activating **Select**, so the first click in the viewport works. Every
+tool, Select included, has a palette id (`"select"`, `"cut_hole"`, primitive TypeIds, `"door"`/`"window"`)
+— `ActiveToolIdChanged` never carries null. Panels set up after `ToolManager` read `ActiveToolId` once
+to sync, since the initial event fired before they subscribed. `ToolManager.HintFor(id)` is a one-line
+how-to per tool (keep it in step with each tool's click flow); the StatusBar shows it on the right and
+the palette uses it as the button tooltip.
 
 ### Notifications, dirty tracking, safety
 
@@ -101,7 +116,10 @@ id→`TreeItem` map, so drags don't thrash the tree or reset expand/collapse sta
 flag prevents the programmatic re-selection from echoing back as a user click.
 
 ### InspectorPanel (right)
-Properties of the selected object. Identity (type + id); a **Texture** slot (`TextureDropZone`)
+Properties of the selected object, inside a vertical-only `ScrollContainer` (long param lists scroll;
+width stays pinned by the dock's min size + autowrapped labels). Identity (registry DisplayName + id,
+plus a "N selected" note for multi-selections); a **Texture** slot (hidden when nothing / an opening
+is selected) (`TextureDropZone`)
 showing the current texture and accepting a dropped swatch; **texture properties** (Tiling, Tint,
 and Pixelate) for the current texture; and the selection's editable parameters (the primitive's
 `ParamSpec`s, or an opening's offset/width/height/sill). Subscribes to `EditorContext.Changed`.
@@ -120,11 +138,12 @@ and Pixelate) for the current texture; and the selection's editable parameters (
   via `_syncers`. All programmatic writes run under `_suppress` so they don't echo as new commands.
 
 ### PrimitivePalettePanel (bottom tab 1)
-Every registered primitive **plus** the two wall openings (door/window), grouped by category
-(Structure → Openings → Vertical) as toggle `Button`s in one `ButtonGroup`. Clicking one calls
+Every registered primitive **plus** the non-primitive tools — a **Tools** group (Select, Cut Hole) first,
+and the two wall openings (door/window) — grouped by category (Tools → Structure → Openings → Vertical)
+as toggle `Button`s in one `ButtonGroup`. Labels carry the hotkey (`Wall  (W)`); tooltips are the tool hint. Clicking one calls
 `ToolManager.ActivateToolById(id)` — the *same* path as the keyboard hotkey. Two-way: `ToolManager`
 fires `ActiveToolIdChanged(id|null)` from `SetActive`, the palette mirrors it via
-`SetPressedNoSignal` (null = Select tool → all unpressed). Note openings are **not** registry
+`SetPressedNoSignal`. Note openings are **not** registry
 primitives — they're `OpeningTool` presets, listed by id `"door"`/`"window"` which `ToolManager`
 maps to those tools.
 
@@ -158,7 +177,8 @@ Document-level actions, all routed through `EditorContext`/`AppConfig` (same pat
   `user://levelbuilder.cfg`, sets `Workspace.SetRoot` (creates `levels/` + `textures/`), and
   repopulates the texture palette (a `textures.Refresh` callback passed from `Main`).
 - **Level** — a name `LineEdit` (the only focus-taking widget here; it edits `Document.Name`, which
-  is metadata, not undo-tracked) + **New** / **Open…** / **Save**. Open is a `FileDialog{OpenFile,
+  is metadata, not undo-tracked; commits on Enter or focus loss via `EditorContext.RenameDocument`, which fires
+`Changed` so the window title follows) + **New** / **Open…** / **Save**. Open is a `FileDialog{OpenFile,
   *.tres}` rooted at `<workspace>/levels`; Save writes there and remembers the path for resume.
 - **Bake (local preview)** — per-object and merged-chunk bakes into `<workspace>/baked` (no embed;
   needs a workspace set). See `EXPORT.md`.

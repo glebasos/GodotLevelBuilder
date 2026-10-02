@@ -1,4 +1,5 @@
 using Godot;
+using LevelBuilder.Core.Primitives;
 
 namespace LevelBuilder.UI;
 
@@ -62,6 +63,22 @@ public static class UiFactory
     /// </summary>
     public static void ReleaseFocusOnSubmit(SpinBox sb)
         => sb.GetLineEdit().TextSubmitted += _ => sb.GetLineEdit().ReleaseFocus();
+
+    /// <summary>
+    /// Human-readable name for a primitive type id ("polygon_floor" → its registry DisplayName, e.g.
+    /// "Polygon Floor"); falls back to a prettified id for unknown types.
+    /// </summary>
+    public static string TypeLabel(PrimitiveRegistry registry, string typeId)
+    {
+        if (string.IsNullOrEmpty(typeId)) return "Object";
+        string name = registry?.Get(typeId)?.DisplayName;
+        if (!string.IsNullOrEmpty(name)) return name;
+        string spaced = typeId.Replace('_', ' ');
+        return $"{char.ToUpperInvariant(spaced[0])}{spaced[1..]}";
+    }
+
+    /// <summary>Door vs window label for an opening (a window has a sill above the floor).</summary>
+    public static string OpeningLabel(Core.Data.OpeningData o) => o != null && o.SillHeight > 0 ? "Window" : "Door";
 
     /// <summary>Last <paramref name="len"/> chars of an id — a compact disambiguator for labels.</summary>
     public static string ShortId(string id, int len = 6)

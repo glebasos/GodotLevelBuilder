@@ -698,6 +698,49 @@ public sealed class EditorContext
         CurrentLevelPath = "";
     }
 
+    /// <summary>
+    /// Renames the document and raises <see cref="Changed"/> so the window title / name field follow.
+    /// Metadata only — deliberately not undoable and doesn't dirty (accepted gap, see docs/UI.md).
+    /// </summary>
+    public void RenameDocument(string name)
+    {
+        name = name?.Trim();
+        if (string.IsNullOrEmpty(name) || name == Document.Name) return;
+        Document.Name = name;
+        Changed?.Invoke();
+    }
+
+    /// <summary>
+    /// World-space bounds of the selected instances (or every instance when <paramref name="all"/>),
+    /// or null when there's nothing to frame. Computed from the data (BuildMesh AABBs), not the live
+    /// view's nodes, which may include ones queued for deletion by a same-frame Rebuild.
+    /// </summary>
+    public Aabb? Bounds(bool all)
+    {
+        Aabb? box = null;
+        foreach (StoreyData storey in Document.Storeys)
+        {
+            var bctx = new BuildContext
+            {
+                Materials = Document.Materials,
+                CellSize = Document.Grid.CellSize,
+                StoreyHeight = storey.Height,
+            };
+            foreach (PrimitiveInstanceData inst in storey.Instances)
+            {
+                if (!all && !_selectedIds.Contains(inst.Id)) continue;
+                IPrimitive prim = Registry.Get(inst.PrimitiveType);
+                if (prim == null) continue;
+
+                Transform3D xform = inst.LocalTransform;
+                xform.Origin += new Vector3(0, storey.BaseElevation, 0);
+                Aabb b = xform * prim.BuildMesh(inst, bctx).GetAabb();
+                box = box?.Merge(b) ?? b;
+            }
+        }
+        return box;
+    }
+
     /// <summary>Opens an editable level .tres from disk and makes it the active document. Returns success.</summary>
     public bool OpenLevel(string path)
     {

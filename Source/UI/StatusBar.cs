@@ -16,6 +16,10 @@ public partial class StatusBar : PanelContainer
     private Label _tool;
     private Label _height;
     private Label _selection;
+    private Label _hint;
+
+    private const string DefaultHint =
+        "LMB draw/select  ·  MMB orbit  ·  Shift+MMB pan  ·  wheel zoom  ·  . frame  ·  7 top-down  ·  F1 help";
 
     public void Setup(EditorContext ctx, ToolManager tools)
     {
@@ -34,18 +38,20 @@ public partial class StatusBar : PanelContainer
         _selection = Cell("Nothing selected", "Ctrl+click to multi-select; Del deletes the selection.");
         row.AddChild(_selection);
 
-        var hint = new Label
+        // Right side: how to use the active tool (falls back to the general camera/controls hint).
+        _hint = new Label
         {
-            Text = "LMB draw/select  ·  MMB orbit  ·  Shift+MMB pan  ·  wheel zoom  ·  7 top-down  ·  F1 help",
+            Text = DefaultHint,
             Modulate = UiConstants.FontDim,
             HorizontalAlignment = HorizontalAlignment.Right,
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
         };
-        row.AddChild(hint);
+        row.AddChild(_hint);
 
         _ctx.Changed += Refresh;
         _tools.ActiveToolIdChanged += OnToolChanged;
+        OnToolChanged(_tools.ActiveToolId); // the initial tool was activated before we subscribed
         Refresh();
     }
 
@@ -64,9 +70,13 @@ public partial class StatusBar : PanelContainer
 
     private void OnToolChanged(string id)
     {
-        string name = id == null ? "Select" : $"{char.ToUpperInvariant(id[0])}{id[1..].Replace('_', ' ')}";
-        string hotkey = id != null ? _tools.HotkeyFor(id) : "S";
+        string name = _tools.ActiveToolName;
+        string hotkey = id != null ? _tools.HotkeyFor(id) : null;
         _tool.Text = hotkey != null ? $"Tool: {name} ({hotkey})" : $"Tool: {name}";
+        string hint = ToolManager.HintFor(id);
+        _hint.Text = hint ?? DefaultHint;
+        _hint.TooltipText = hint != null ? $"{hint}\n\n{DefaultHint}" : "";
+        _hint.MouseFilter = MouseFilterEnum.Stop; // so a trimmed hint can still be read in full via tooltip
     }
 
     private void Refresh()

@@ -166,7 +166,10 @@ public partial class Main : Node3D
             requestOpen: () => ConfirmIfDirty(project.ShowOpenDialog),
             requestQuit: RequestQuit,
             toggleTopDown: cameraRig.ToggleTopDown,
-            toggleHelp: helpOverlay.Toggle);
+            toggleHelp: helpOverlay.Toggle,
+            frameSelection: cameraRig.FrameSelection,
+            frameAll: cameraRig.FrameAll);
+        cameraRig.BoundsProvider = ctx.Bounds; // . / Home framing (and the View menu items)
 
         // Intercept window close so unsaved work prompts instead of silently quitting.
         GetTree().AutoAcceptQuit = false;

@@ -23,6 +23,7 @@ public partial class ProjectPanel : MarginContainer
     private Label _workspaceLabel;
     private Label _targetLabel;
     private LineEdit _nameEdit;
+    private LevelDocument _shownDoc; // the document the name field currently reflects
     private Button _exportButton;
     private CheckBox _mergeExportCheck;
     private FileDialog _workspaceDialog;
@@ -68,6 +69,11 @@ public partial class ProjectPanel : MarginContainer
             Text = _ctx.Document.Name,
         };
         _nameEdit.TextSubmitted += OnNameSubmitted;
+        _nameEdit.FocusExited += () =>
+        {
+            _ctx.RenameDocument(_nameEdit.Text); // clicking away commits too…
+            _nameEdit.Text = _ctx.Document.Name;  // …and a blanked field snaps back to the real name
+        };
         levelRow.AddChild(_nameEdit);
         levelRow.AddChild(UiFactory.MakeButton("New", () => Confirm(() => _ctx.NewLevel()),
             tooltip: "Start a fresh empty level."));
@@ -122,6 +128,7 @@ public partial class ProjectPanel : MarginContainer
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         });
 
+        _shownDoc = _ctx.Document;
         _ctx.Changed += OnContextChanged; // keep the name field in sync after New/Open
     }
 
@@ -134,21 +141,31 @@ public partial class ProjectPanel : MarginContainer
 
     private void OnNameSubmitted(string text)
     {
-        string name = text.Trim();
-        if (name.Length > 0) _ctx.Document.Name = name; // document metadata, not undo-tracked geometry
+        _ctx.RenameDocument(text); // document metadata, not undo-tracked geometry; fires Changed → title
         _nameEdit.ReleaseFocus();
     }
 
     private void SaveLevel()
     {
-        string name = _nameEdit.Text.Trim();
-        if (name.Length > 0) _ctx.Document.Name = name; // commit a typed-but-not-submitted name
+        _ctx.RenameDocument(_nameEdit.Text); // commit a typed-but-not-submitted name
         _ctx.SaveSource();
     }
 
     private void OnContextChanged()
     {
-        // Reflect the open document's name, but don't clobber what the user is typing.
+        // Document swapped (New/Open): always take the new name and drop focus. The buttons are
+        // FocusMode None, so the field can still be focused here — without this, its stale text would
+        // be committed onto the NEW document on the next focus loss (and Save names the file after it).
+        // Text is set before ReleaseFocus so the resulting FocusExited commit is a no-op.
+        if (!ReferenceEquals(_ctx.Document, _shownDoc))
+        {
+            _shownDoc = _ctx.Document;
+            _nameEdit.Text = _ctx.Document.Name;
+            if (_nameEdit.HasFocus()) _nameEdit.ReleaseFocus();
+            return;
+        }
+
+        // Same document: reflect its name, but don't clobber what the user is typing.
         if (!_nameEdit.HasFocus() && _nameEdit.Text != _ctx.Document.Name)
             _nameEdit.Text = _ctx.Document.Name;
     }

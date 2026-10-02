@@ -28,6 +28,8 @@ public partial class MenuBarPanel : MenuBar
     private const int EditDelete = 2;
 
     private const int ViewTopDown = 0;
+    private const int ViewFrameSelection = 1;
+    private const int ViewFrameAll = 2;
     private const int HelpHotkeys = 0;
 
     private EditorContext _ctx;
@@ -36,9 +38,12 @@ public partial class MenuBarPanel : MenuBar
     private System.Action _requestQuit;
     private System.Action _toggleTopDown;
     private System.Action _toggleHelp;
+    private System.Action _frameSelection;
+    private System.Action _frameAll;
 
     public void Setup(EditorContext ctx, System.Action requestNew, System.Action requestOpen,
-        System.Action requestQuit, System.Action toggleTopDown, System.Action toggleHelp)
+        System.Action requestQuit, System.Action toggleTopDown, System.Action toggleHelp,
+        System.Action frameSelection, System.Action frameAll)
     {
         _ctx = ctx;
         _requestNew = requestNew;
@@ -46,6 +51,8 @@ public partial class MenuBarPanel : MenuBar
         _requestQuit = requestQuit;
         _toggleTopDown = toggleTopDown;
         _toggleHelp = toggleHelp;
+        _frameSelection = frameSelection;
+        _frameAll = frameAll;
 
         var file = AddMenu("File");
         file.AddItem("New Level", FileNew);
@@ -65,9 +72,20 @@ public partial class MenuBarPanel : MenuBar
         edit.AddSeparator();
         edit.AddItem("Delete Selected       Del", EditDelete);
         edit.IdPressed += OnEdit;
+        // Grey out what can't run right now. Evaluated on open (not on EditorContext.Changed, which
+        // fires every drag frame). SetItemDisabled takes an index, hence GetItemIndex.
+        edit.AboutToPopup += () =>
+        {
+            edit.SetItemDisabled(edit.GetItemIndex(EditUndo), !_ctx.Commands.CanUndo);
+            edit.SetItemDisabled(edit.GetItemIndex(EditRedo), !_ctx.Commands.CanRedo);
+            edit.SetItemDisabled(edit.GetItemIndex(EditDelete), _ctx.SelectedId == null);
+        };
 
         var view = AddMenu("View");
         view.AddItem("Toggle Top-Down       7", ViewTopDown);
+        view.AddSeparator();
+        view.AddItem("Frame Selection       .", ViewFrameSelection);
+        view.AddItem("Frame All             Home", ViewFrameAll);
         view.IdPressed += OnView;
 
         var help = AddMenu("Help");
@@ -108,7 +126,12 @@ public partial class MenuBarPanel : MenuBar
 
     private void OnView(long id)
     {
-        if (id == ViewTopDown) _toggleTopDown?.Invoke();
+        switch (id)
+        {
+            case ViewTopDown: _toggleTopDown?.Invoke(); break;
+            case ViewFrameSelection: _frameSelection?.Invoke(); break;
+            case ViewFrameAll: _frameAll?.Invoke(); break;
+        }
     }
 
     private void OnHelp(long id)
