@@ -165,7 +165,9 @@ public partial class InspectorPanel : PanelContainer
 
     private void Refresh()
     {
-        string key = $"{_ctx.SelectedId}|{_ctx.SelectedOpeningId}";
+        // The motion mode is part of the key: switching it on/off shows/hides the rest of the Motion rows.
+        PrimitiveInstanceData sel = _ctx.SelectedId != null ? _ctx.GetInstance(_ctx.SelectedId) : null;
+        string key = $"{_ctx.SelectedId}|{_ctx.SelectedOpeningId}|{(sel != null && Motion.IsMoving(sel) ? 1 : 0)}";
 
         _suppress = true; // building rows + syncing values must not re-emit as edits
         if (key != _shownKey)
@@ -238,6 +240,17 @@ public partial class InspectorPanel : PanelContainer
 
         _propsHeader.Visible = prim.Parameters.Count > 0;
         foreach (ParamSpec spec in prim.Parameters) BuildInstanceRow(spec);
+
+        // Super Corgi Ball: any geometry piece can move (slide / swing on a hinge / spin), looping or on a
+        // trigger channel. Stored as m_* params, so it rides the same rows/commands. Markers have their own.
+        if (prim is not MarkerPrimitive)
+        {
+            _propsHeader.Visible = true;
+            _propsBox.AddChild(new Label { Text = "Motion", Modulate = new Color(1, 1, 1, 0.7f) });
+            bool moving = Motion.IsMoving(inst);
+            foreach (ParamSpec spec in Motion.Specs)
+                if (moving || spec.Key == "m_mode") BuildInstanceRow(spec);
+        }
     }
 
     private void BuildInstanceRow(ParamSpec spec)

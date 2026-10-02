@@ -64,7 +64,8 @@ public sealed class SceneBaker
                     GD.PushWarning($"SceneBaker: unknown primitive '{inst.PrimitiveType}' (instance {inst.Id}) — skipped.");
                     continue;
                 }
-                if (prim is MarkerPrimitive) continue; // gameplay markers bake as Marker3D below, not geometry
+                // Gameplay markers and moving pieces bake as Marker3D (AddMarkers), not static geometry.
+                if (prim is MarkerPrimitive || Motion.IsMoving(inst)) continue;
 
                 ArrayMesh mesh = prim.BuildMesh(inst, ctx);
                 materials.AssignSurfaceMaterials(mesh, prim, inst, doc.Materials, embedTextures);
@@ -163,7 +164,8 @@ public sealed class SceneBaker
                     continue;
                 }
 
-                if (prim is MarkerPrimitive) continue; // gameplay markers bake as Marker3D below, not geometry
+                // Gameplay markers and moving pieces bake as Marker3D (AddMarkers), not static geometry.
+                if (prim is MarkerPrimitive || Motion.IsMoving(inst)) continue;
 
                 ArrayMesh mesh = prim.BuildMesh(inst, ctx);
                 Transform3D world = storeyXform * inst.LocalTransform;
@@ -241,7 +243,14 @@ public sealed class SceneBaker
             var ctx = new BuildContext { Materials = doc.Materials, CellSize = doc.Grid.CellSize, StoreyHeight = storey.Height };
             foreach (PrimitiveInstanceData inst in storey.Instances.OrderBy(i => i.Id))
             {
-                if (_registry.Get(inst.PrimitiveType) is not MarkerPrimitive marker) continue;
+                IPrimitive prim = _registry.Get(inst.PrimitiveType);
+                if (prim != null && prim is not MarkerPrimitive && Motion.IsMoving(inst))
+                {
+                    geometryMinY = Mathf.Min(geometryMinY,
+                        AddMover(markers, inst, prim, ctx, storeyXform, doc, materials, embedTextures));
+                    continue;
+                }
+                if (prim is not MarkerPrimitive marker) continue;
 
                 var node = new Marker3D
                 {
@@ -288,6 +297,32 @@ public sealed class SceneBaker
         markers.SetMeta("scb_time_limit", timeLimit);
         markers.SetMeta("scb_fall_out_y", baseY - fallDepth);
         root.AddChild(markers);
+    }
+
+    /// <summary>
+    /// A geometry piece with Motion (sliding wall, swinging door …): baked as a <c>mover</c> Marker3D at the
+    /// piece's placed pose, carrying its textured mesh as a <c>Mesh</c> child plus the motion values. The
+    /// game builds a moving body from it. Returns its lowest Y over both ends of the travel (fall-out).
+    /// </summary>
+    private static float AddMover(Node3D markers, PrimitiveInstanceData inst, IPrimitive prim, BuildContext ctx,
+        Transform3D storeyXform, LevelDocument doc, MaterialResolver materials, bool embedTextures)
+    {
+        var node = new Marker3D
+        {
+            Name = $"{TypeName(inst.PrimitiveType)}_{inst.Id}",
+            Transform = storeyXform * inst.LocalTransform,
+        };
+        node.SetMeta("scb_kind", "mover");
+        foreach ((string key, Variant value) in Motion.BakeMeta(inst))
+            node.SetMeta($"scb_{key}", value);
+
+        ArrayMesh mesh = prim.BuildMesh(inst, ctx);
+        materials.AssignSurfaceMaterials(mesh, prim, inst, doc.Materials, embedTextures);
+        node.AddChild(new MeshInstance3D { Name = "Mesh", Mesh = mesh });
+        markers.AddChild(node);
+
+        return Mathf.Min(MinY(mesh, Vector3.Zero, node.Transform),
+                         MinY(mesh, Vector3.Zero, node.Transform * Motion.PoseAt(inst, 1f)));
     }
 
     /// <summary>Lowest Y of a mesh's AABB corners once placed (storey offset + instance transform).</summary>

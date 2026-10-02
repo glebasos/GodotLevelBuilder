@@ -35,6 +35,7 @@ public partial class HelpOverlay : Control
         ("M", "Moving platform"),
         ("V", "Bumper"),
         ("Q", "Conveyor"),
+        ("H", "Trigger zone (fires a channel)"),
     };
 
     private static readonly (string Keys, string Action)[] Commands =

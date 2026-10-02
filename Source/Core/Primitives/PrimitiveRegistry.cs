@@ -40,6 +40,7 @@ public sealed class PrimitiveRegistry
         registry.Register(new PlatformMarkerPrimitive());
         registry.Register(new BumperMarkerPrimitive());
         registry.Register(new ConveyorMarkerPrimitive());
+        registry.Register(new TriggerMarkerPrimitive());
         return registry;
     }
 }

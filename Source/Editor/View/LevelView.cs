@@ -91,6 +91,7 @@ public partial class LevelView : Node3D
 
                 AddChild(BuildPickBody(inst, prim, ctx, xform));
                 AddOpeningBodies(inst, xform);
+                AddMotionGhost(inst, prim, mesh, xform);
             }
         }
     }
@@ -125,6 +126,47 @@ public partial class LevelView : Node3D
                 });
         }
     }
+
+    /// <summary>
+    /// Super Corgi Ball motion preview: a translucent copy of a moving piece at the end of its travel
+    /// (s = 1), plus a small cube on the hinge when it swings — edit-time only, never baked.
+    /// </summary>
+    private void AddMotionGhost(PrimitiveInstanceData inst, IPrimitive prim, ArrayMesh mesh, Transform3D xform)
+    {
+        if (prim is MarkerPrimitive || !Motion.IsMoving(inst)) return;
+
+        AddChild(new MeshInstance3D
+        {
+            Mesh = mesh,
+            Transform = xform * Motion.PoseAt(inst, 1f),
+            MaterialOverride = GhostMaterial(),
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        });
+
+        float angle = inst.Parameters.ContainsKey("m_angle") ? inst.Parameters["m_angle"].AsSingle() : 0f;
+        if (!Mathf.IsZeroApprox(angle))
+            AddChild(new MeshInstance3D
+            {
+                Mesh = MeshBuilder.Box(new Vector3(0.25f, 0.25f, 0.25f)),
+                Transform = xform * new Transform3D(Basis.Identity, Motion.Hinge(inst)),
+                MaterialOverride = HingeMaterial(),
+            });
+    }
+
+    private static StandardMaterial3D GhostMaterial() => new()
+    {
+        ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+        Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+        AlbedoColor = new Color(0.3f, 0.95f, 1.0f, 0.25f),
+        CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+    };
+
+    private static StandardMaterial3D HingeMaterial() => new()
+    {
+        ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+        AlbedoColor = new Color(1.0f, 0.35f, 0.75f),
+        NoDepthTest = true,
+    };
 
     /// <summary>A copy of the wall sharing its parameters but with one opening removed (for the intact-wall view).</summary>
     private static PrimitiveInstanceData WithoutOpening(PrimitiveInstanceData inst, string openingId)

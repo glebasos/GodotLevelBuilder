@@ -55,6 +55,7 @@ public partial class ToolManager : Node
         var platform = new MarkerPlaceTool("platform", "Moving Platform");
         var bumper = new MarkerPlaceTool("bumper", "Bumper");
         var conveyor = new MarkerPlaceTool("conveyor", "Conveyor");
+        var trigger = new MarkerPlaceTool("trigger", "Trigger Zone");
 
         _tools = new Dictionary<Key, ITool>
         {
@@ -82,6 +83,7 @@ public partial class ToolManager : Node
             { Key.M, platform },
             { Key.V, bumper },
             { Key.Q, conveyor },
+            { Key.H, trigger },
         };
 
         _toolsById = new Dictionary<string, ITool>
@@ -110,6 +112,7 @@ public partial class ToolManager : Node
             { "platform", platform },
             { "bumper", bumper },
             { "conveyor", conveyor },
+            { "trigger", trigger },
         };
         _idByTool = new Dictionary<ITool, string>();
         foreach (var (id, tool) in _toolsById) _idByTool[tool] = id;
@@ -157,6 +160,7 @@ public partial class ToolManager : Node
         { "platform", "Click to place a moving platform · travel, period, spin in the inspector" },
         { "bumper", "Click to place a bumper post · kick strength in the inspector" },
         { "conveyor", "Click to place a conveyor zone on a floor · speed + size in the inspector" },
+        { "trigger", "Click to place a trigger zone · it fires its channel; pieces with Motion = On trigger + that channel move" },
         { "ramp", "Click the bottom end, then the top end" },
         { "ramp_plane", "Click the bottom end, then the top end" },
         { "banked_curve", "Click the entry corner, then the heading (distance = radius); curves left" },
