@@ -117,9 +117,9 @@ right **inspector**, and a bottom tab bar with **Primitives / Textures / Project
 
 | Key | Tool | Key | Tool |
 |-----|------|-----|------|
-| `S` | Select | | |
+| `S` | Select | `T` | Start (ball spawn) |
 | `F` | Floor | `G` | Ramp Plane |
-| `W` | Wall | | |
+| `W` | Wall | `X` / `B` | Goal gate / Bone |
 | `D` | Door (opening) | `C` | Banked Curve |
 | `N` | Window (opening) | `U` | Half-Pipe |
 | `R` | Ramp | `E` | Edge Curb |
