@@ -23,6 +23,8 @@ public static class Workspace
     /// <summary>Where the local "bake" buttons drop game-ready .tscn output. Writable (unlike
     /// <c>res://</c>, which is read-only once the builder is an exported standalone binary).</summary>
     public static string BakedDir => IsSet ? $"{Root}/baked" : "";
+    /// <summary>Where shareable player levels (<c>.scblevel</c>, Super Corgi Ball) are written.</summary>
+    public static string SharedDir => IsSet ? $"{Root}/shared" : "";
 
     /// <summary>Sets the workspace root (normalising slashes) and creates its subfolders.</summary>
     public static void SetRoot(string absPath)

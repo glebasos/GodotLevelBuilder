@@ -77,9 +77,11 @@ Both bake modes (per-object and merged) append, only if the level has markers:
 
 ## Roadmap
 
-- **Player-made levels (post-release):** the standalone builder ships to players, but `.tscn`/`.tres`
-  can carry scripts, so shared levels must use a **data-only** format the game parses: JSON (markers +
-  settings) + glTF mesh (`GLTFDocument` at runtime), collision rebuilt from the mesh. Verify runtime glTF
-  in Godot 4.7 first. Note builder = net10.0, game = net8.0 if Core code is ever shared.
+- **Player-made levels** — first cut done: Project tab → **Export Player Level (.scblevel)** writes a zip
+  (`level.json` markers/settings + `level.glb` meshes, textures embedded) to `<workspace>/shared/`, copied
+  to `<target>/levels/` too. Game: `PlayerLevelLoader` validates + rebuilds the chunk; never loads a Godot
+  Resource from the file. Builder: `Core/Build/PlayerLevelExporter.cs`. Still to do: an in-game custom-level
+  browser (set `BuilderLevel.PendingLevelFile`, change to the template), level thumbnails, a format
+  version bump policy. JSON marker `transform` = 12 floats (basis columns X,Y,Z then origin).
 - ~~Rotate gizmo for marker yaw~~ — done: pink `YawHandle` on every marker, 15° snap.
 - More pieces: goal variants, switches, wind/fans, ice/sticky floors.

@@ -876,6 +876,31 @@ public sealed class EditorContext
         return false;
     }
 
+    /// <summary>
+    /// Super Corgi Ball: writes the shareable, data-only <c>.scblevel</c> (JSON + glTF, see
+    /// <see cref="PlayerLevelExporter"/>) to the workspace's <c>shared/</c> folder — what players will
+    /// hand around. With a target game project set, also copies it into its <c>levels/</c> for testing.
+    /// </summary>
+    public void ExportPlayerLevel()
+    {
+        if (!RequireWorkspaceForBake()) return;
+        if (!HasStartMarker())
+            Notified?.Invoke(NotifyLevel.Warning, "No Start placed — the game will refuse this level.");
+
+        EnsureDir(Workspace.SharedDir);
+        string path = $"{Workspace.SharedDir}/{FileStem()}.{PlayerLevelExporter.Extension}";
+        Error e = PlayerLevelExporter.Export(Document, Registry, path);
+        Report("player level", path, e);
+        if (e != Error.Ok || Config == null || !Config.HasTarget) return;
+
+        string dir = $"{Config.TargetProjectPath}/levels";
+        EnsureDir(dir);
+        string copy = $"{dir}/{path.GetFile()}";
+        Error ce = DirAccess.CopyAbsolute(path, copy);
+        if (ce != Error.Ok) GD.PushWarning($"[player level] could not copy to {copy}: {ce}");
+        else GD.Print($"[player level] copied to {copy}");
+    }
+
     private string FileStem()
     {
         string raw = string.IsNullOrWhiteSpace(Document.Name) ? "Untitled" : Document.Name;

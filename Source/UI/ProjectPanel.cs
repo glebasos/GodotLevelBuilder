@@ -118,6 +118,13 @@ public partial class ProjectPanel : MarginContainer
         };
         rows.AddChild(_mergeExportCheck);
 
+        // --- Shareable player level (Super Corgi Ball) ---
+        rows.AddChild(Section("Player level (shareable)"));
+        var playerRow = Row(rows);
+        playerRow.AddChild(UiFactory.MakeButton("Export Player Level (.scblevel)", () => _ctx.ExportPlayerLevel(),
+            tooltip: "Write a data-only .scblevel (JSON + glTF, no scripts) to the workspace's shared/ folder — "
+                   + "the format players share. Also copied into the target project's levels/ when one is set."));
+
         rows.AddChild(new Label
         {
             Text = "Export = written into the target project's levels/ folder, textures embedded inline "
