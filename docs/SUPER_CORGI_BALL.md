@@ -58,8 +58,11 @@ Both bake modes (per-object and merged) append, only if the level has markers:
 ## Workflow
 
 1. Build the stage; place **Start**, **Goal**, **Bones**; set time limit / fall-out on the Start.
-2. Project tab → **Export to Game** (merged) → `<target>/levels/<Name>.tscn`.
-3. In the game: inherited scene from the template, point `Stage.Level` at the export, F5.
+2. Project tab → **Export to Game** (merged) → `<target>/levels/<Name>.tscn`. If the level has a Start,
+   the export also writes `<Name>_Play.tscn` next to it (once — never overwritten; see
+   `Core/Build/PlaySceneWriter.cs`): the game's template with `Stage.Level` = the chunk.
+3. In the game: open `<Name>_Play.tscn`, **F6**. Add it to `LevelSwitcher.Levels` when it's a keeper.
+   (F6 on the bare chunk shows a grey screen — it's only geometry + markers.)
 
 ## Roadmap
 

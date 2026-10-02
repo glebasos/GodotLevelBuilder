@@ -845,6 +845,35 @@ public sealed class EditorContext
             ? baker.BakeMergedToFile(Document, path, embedTextures: true)
             : baker.BakeToFile(Document, path, embedTextures: true);
         Report("export", path, e);
+        if (e == Error.Ok && HasStartMarker()) WritePlayScene(path);
+    }
+
+    /// <summary>Super Corgi Ball: a level with a Start also gets a ready-to-run <c>&lt;Name&gt;_Play.tscn</c>.</summary>
+    private void WritePlayScene(string chunkPath)
+    {
+        PlaySceneWriter.Result r = PlaySceneWriter.WriteFor(chunkPath, out string playPath);
+        switch (r)
+        {
+            case PlaySceneWriter.Result.Written:
+                GD.Print($"[export] wrote {playPath}");
+                Notified?.Invoke(NotifyLevel.Success, $"Playable scene: {playPath.GetFile()} (F6 it in the game)");
+                break;
+            case PlaySceneWriter.Result.NoTemplate:
+                Notified?.Invoke(NotifyLevel.Warning, $"No {PlaySceneWriter.TemplateResPath} in the game — skipped the _Play scene.");
+                break;
+            case PlaySceneWriter.Result.Failed:
+                Notified?.Invoke(NotifyLevel.Error, $"Could not write {playPath.GetFile()}");
+                break;
+            // AlreadyExists / NoGameProject: nothing to say (the existing scene already points here).
+        }
+    }
+
+    private bool HasStartMarker()
+    {
+        foreach (StoreyData storey in Document.Storeys)
+            foreach (PrimitiveInstanceData inst in storey.Instances)
+                if (inst.PrimitiveType == "spawn") return true;
+        return false;
     }
 
     private string FileStem()
