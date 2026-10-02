@@ -80,7 +80,11 @@ public partial class InstancePicker : Node3D
 
     public override void _PhysicsProcess(double delta) => _latest = Raycast();
 
-    private const uint BodyMask = 1;   // instance + opening pick colliders (LevelView, default layer)
+    private const uint BodyMask = 1;   // instance pick colliders (LevelView, default layer)
+    /// <summary>Opening pick boxes live on their own layer so a piece INSIDE a doorway (e.g. a door panel)
+    /// can win over the opening box that encloses it. See <see cref="Raycast"/>.</summary>
+    public const uint OpeningLayer = 4;
+    private const float OpeningYield = 0.5f; // an instance this close behind the opening's face wins
     private const uint HandleMask = Gizmos.GizmoLayer.HandleLayer; // gizmo handle colliders
 
     private PickResult Raycast()
@@ -106,7 +110,23 @@ public partial class InstancePicker : Node3D
 
         var bodyQuery = PhysicsRayQueryParameters3D.Create(from, to);
         bodyQuery.CollisionMask = BodyMask;
-        Godot.Collections.Dictionary hit = space.IntersectRay(bodyQuery);
+        Godot.Collections.Dictionary bodyHit = space.IntersectRay(bodyQuery);
+
+        var openingQuery = PhysicsRayQueryParameters3D.Create(from, to);
+        openingQuery.CollisionMask = OpeningLayer;
+        Godot.Collections.Dictionary openingHit = space.IntersectRay(openingQuery);
+
+        // The opening wins unless an instance is hit within the doorway's depth: that's something sitting
+        // in the opening (a door panel), which must stay selectable. Through an empty doorway the next
+        // instance is the floor/wall far behind, so the opening still wins there.
+        Godot.Collections.Dictionary hit = bodyHit;
+        if (openingHit.Count > 0)
+        {
+            float openingDist = from.DistanceTo(openingHit["position"].AsVector3());
+            bool instanceInside = bodyHit.Count > 0
+                && from.DistanceTo(bodyHit["position"].AsVector3()) <= openingDist + OpeningYield;
+            if (!instanceInside) hit = openingHit;
+        }
         if (hit.Count == 0) return default;
 
         var collider = hit["collider"].As<Node>();

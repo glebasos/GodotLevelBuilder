@@ -49,6 +49,10 @@ public partial class LevelView : Node3D
         foreach (Node child in GetChildren())
             child.QueueFree();
 
+        // Trigger wiring overlay (Super Corgi Ball): channel → trigger zone tops / triggered piece centres.
+        var triggers = new List<(int channel, Vector3 at)>();
+        var listeners = new List<(int channel, Vector3 at)>();
+
         foreach (StoreyData storey in _doc.Storeys)
         {
             var ctx = new BuildContext
@@ -92,9 +96,82 @@ public partial class LevelView : Node3D
                 AddChild(BuildPickBody(inst, prim, ctx, xform));
                 AddOpeningBodies(inst, xform);
                 AddMotionGhost(inst, prim, mesh, xform);
+                CollectWiring(inst, prim, mesh, xform, triggers, listeners);
             }
         }
+        AddWiring(triggers, listeners);
     }
+
+    private static void CollectWiring(PrimitiveInstanceData inst, IPrimitive prim, ArrayMesh mesh, Transform3D xform,
+        List<(int, Vector3)> triggers, List<(int, Vector3)> listeners)
+    {
+        if (prim is TriggerMarkerPrimitive)
+        {
+            int ch = inst.Parameters.ContainsKey("channel") ? inst.Parameters["channel"].AsInt32() : 1;
+            float h = inst.Parameters.ContainsKey("height") ? inst.Parameters["height"].AsSingle() : 3f;
+            triggers.Add((ch, xform.Origin + Vector3.Up * h));
+        }
+        else if (prim is not MarkerPrimitive && Motion.Mode(inst) == Motion.Triggered)
+        {
+            int ch = inst.Parameters.ContainsKey("m_channel") ? inst.Parameters["m_channel"].AsInt32() : 1;
+            Aabb box = mesh.GetAabb();
+            listeners.Add((ch, xform * (box.GetCenter() + new Vector3(0, box.Size.Y * 0.5f, 0))));
+        }
+    }
+
+    /// <summary>
+    /// Makes the invisible channel wiring visible: a "CH n" label over every trigger zone and every piece
+    /// moving "On trigger", and a yellow line from each trigger to each piece on its channel. A listener
+    /// with no trigger on its channel gets a red label (it would never move). Edit-time only.
+    /// </summary>
+    private void AddWiring(List<(int channel, Vector3 at)> triggers, List<(int channel, Vector3 at)> listeners)
+    {
+        var fired = new HashSet<int>();
+        foreach ((int ch, Vector3 at) in triggers)
+        {
+            fired.Add(ch);
+            AddChild(ChannelLabel($"CH {ch}", at, new Color(1f, 0.9f, 0.2f)));
+        }
+        foreach ((int ch, Vector3 at) in listeners)
+            AddChild(ChannelLabel(fired.Contains(ch) ? $"CH {ch}" : $"CH {ch} (no trigger)", at,
+                                  fired.Contains(ch) ? new Color(1f, 0.9f, 0.2f) : new Color(1f, 0.35f, 0.3f)));
+
+        var lines = new ImmediateMesh();
+        bool any = false;
+        foreach ((int tch, Vector3 from) in triggers)
+            foreach ((int lch, Vector3 to) in listeners)
+            {
+                if (tch != lch) continue;
+                if (!any) { lines.SurfaceBegin(Mesh.PrimitiveType.Lines); any = true; }
+                lines.SurfaceAddVertex(from);
+                lines.SurfaceAddVertex(to);
+            }
+        if (!any) return;
+        lines.SurfaceEnd();
+        AddChild(new MeshInstance3D
+        {
+            Mesh = lines,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            MaterialOverride = new StandardMaterial3D
+            {
+                ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+                AlbedoColor = new Color(1f, 0.9f, 0.2f),
+                NoDepthTest = true,
+            },
+        });
+    }
+
+    private static Label3D ChannelLabel(string text, Vector3 at, Color color) => new()
+    {
+        Text = text,
+        Position = at + Vector3.Up * 0.4f,
+        Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
+        NoDepthTest = true,
+        FontSize = 48,
+        PixelSize = 0.008f,
+        Modulate = color,
+        OutlineSize = 10,
+    };
 
     /// <summary>
     /// For each opening on a wall, a box pick collider (tagged wall + opening id) so the hole is
@@ -111,7 +188,7 @@ public partial class LevelView : Node3D
             (Vector3 size, Transform3D localCenter) = OpeningGeometry.LocalBox(o, length, thickness);
             Transform3D world = wallXform * localCenter;
 
-            var body = new StaticBody3D { Transform = world };
+            var body = new StaticBody3D { Transform = world, CollisionLayer = Session.InstancePicker.OpeningLayer };
             body.SetMeta("instanceId", inst.Id);
             body.SetMeta("openingId", o.Id);
             body.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = size } });
