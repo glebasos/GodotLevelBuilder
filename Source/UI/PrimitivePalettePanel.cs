@@ -92,7 +92,7 @@ public partial class PrimitivePalettePanel : MarginContainer
     }
 
     /// <summary>
-    /// "Draw from" dropdown controlling how the width-based tools (ramp, ramp plane, stairs, stair plane)
+    /// "Draw from" dropdown controlling how the width-based tools (ramp, ramp plane)
     /// anchor their fixed width to the two-click line: Edge (default — the line is the near edge, sits on the
     /// adjacent tiles) or Center (the line is the centreline, so mirror-image draws come out symmetric).
     /// Session-only; writes straight to <see cref="EditorContext.WidthFromCenter"/>.
@@ -104,7 +104,7 @@ public partial class PrimitivePalettePanel : MarginContainer
         var label = new Label
         {
             Text = "Draw width from:",
-            TooltipText = "How ramps/stairs anchor their width to the drawn line.",
+            TooltipText = "How ramps anchor their width to the drawn line.",
             MouseFilter = MouseFilterEnum.Stop,
         };
         row.AddChild(label);

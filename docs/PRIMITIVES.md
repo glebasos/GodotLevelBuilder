@@ -102,8 +102,6 @@ wall, placed via `OpeningTool` (see below).
 | `edge_curb` | Structure | `E` | width, depth, style (Rail/Elevated Rail/Bank), railHeight, thickness, bankAngle | Side, Top, Bottom |
 | `ramp` | Vertical | `R` | length, rise, width | Surface, Side |
 | `ramp_plane` | Vertical | `G` | length, rise, width, thickness | Surface, Side |
-| `stairs` | Vertical | `T` | steps, totalRise, run, width | Tread, Riser, Side |
-| `stair_plane` | Vertical | `H` | steps, totalRise, run, width, thickness | Tread, Riser, Side |
 | `banked_curve` | Curves | `C` | radius, arc, width, bank, rise, thickness, segments | Surface, Side |
 | `half_pipe` | Curves | `U` | length, radius, arc, curve, rise, deck, deckWidth, thickness, sides, segments | Surface, Side |
 | `dome` | Curves | `O` | radius, height, convex, rings, sides | Surface, Bottom, Side |

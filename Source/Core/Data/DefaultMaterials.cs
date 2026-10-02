@@ -35,8 +35,6 @@ public static class DefaultMaterials
         },
         "ramp" => new Dictionary<string, string> { ["Surface"] = Floor, ["Side"] = Trim },
         "ramp_plane" => new Dictionary<string, string> { ["Surface"] = Floor, ["Side"] = Trim },
-        "stairs" => new Dictionary<string, string> { ["Tread"] = Floor, ["Riser"] = Wall, ["Side"] = Trim },
-        "stair_plane" => new Dictionary<string, string> { ["Tread"] = Floor, ["Riser"] = Wall, ["Side"] = Trim },
         "banked_curve" => new Dictionary<string, string> { ["Surface"] = Floor, ["Side"] = Trim },
         "half_pipe" => new Dictionary<string, string> { ["Surface"] = Floor, ["Side"] = Trim },
         "edge_curb" => new Dictionary<string, string> { ["Side"] = Wall, ["Top"] = Trim, ["Bottom"] = Trim },

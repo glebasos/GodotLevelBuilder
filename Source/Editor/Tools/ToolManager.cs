@@ -39,9 +39,7 @@ public partial class ToolManager : Node
         var cutHole = new CutHoleTool();
         var wall = new WallDrawTool();
         var ramp = new RampDrawTool();
-        var stairs = new StairsDrawTool();
         var rampPlane = new RampPlaneDrawTool();
-        var stairPlane = new StairPlaneDrawTool();
         var bankedCurve = new BankedCurveDrawTool();
         var halfPipe = new HalfPipeDrawTool();
         var edgeCurb = new EdgeCurbDrawTool();
@@ -64,9 +62,7 @@ public partial class ToolManager : Node
             { Key.D, door },
             { Key.N, window },
             { Key.R, ramp },
-            { Key.T, stairs },
             { Key.G, rampPlane },
-            { Key.H, stairPlane },
             { Key.C, bankedCurve },
             { Key.U, halfPipe },
             { Key.E, edgeCurb },
@@ -86,9 +82,7 @@ public partial class ToolManager : Node
             { "cut_hole", cutHole },
             { "wall", wall },
             { "ramp", ramp },
-            { "stairs", stairs },
             { "ramp_plane", rampPlane },
-            { "stair_plane", stairPlane },
             { "banked_curve", bankedCurve },
             { "half_pipe", halfPipe },
             { "edge_curb", edgeCurb },
@@ -140,9 +134,7 @@ public partial class ToolManager : Node
         { "door", "Click a wall to place a door" },
         { "window", "Click a wall to place a window" },
         { "ramp", "Click the bottom end, then the top end" },
-        { "stairs", "Click the bottom end, then the top end" },
         { "ramp_plane", "Click the bottom end, then the top end" },
-        { "stair_plane", "Click the bottom end, then the top end" },
         { "banked_curve", "Click the entry corner, then the heading (distance = radius); curves left" },
         { "half_pipe", "Click the entry, then the heading (distance = length)" },
         { "edge_curb", "Click two cells to frame a rectangle with a curb" },

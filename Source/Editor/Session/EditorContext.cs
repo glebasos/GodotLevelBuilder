@@ -39,7 +39,7 @@ public sealed class EditorContext
     public float DefaultStoreyHeight => Document.DefaultStoreyHeight;
 
     /// <summary>
-    /// How width-based draw tools (ramp, ramp plane, stairs, stair plane) anchor their fixed width to the
+    /// How width-based draw tools (ramp, ramp plane) anchor their fixed width to the
     /// two-click line. False (default): the line is the near EDGE — the strip sits on the adjacent tiles
     /// (matches the original grid-aligned behaviour). True: the line is the CENTRELINE — the strip
     /// straddles it, so mirror-image draws come out symmetric. Session-only view state (not undoable, not

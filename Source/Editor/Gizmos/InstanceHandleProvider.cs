@@ -152,16 +152,6 @@ public static class InstanceHandleProvider
                 AddFace(handles, inst, prim, world, "rise", new Vector3(l * 0.5f, r, 0), new Vector3(0, 1, 0), 0f);
                 break;
             }
-            case "stairs":
-            {
-                float run = GetF(inst, "run", 3f), rise = GetF(inst, "totalRise", 3f), w = GetF(inst, "width", 1.2f);
-                var midH = new Vector3(0, rise * 0.5f, 0);
-                AddCentered(handles, inst, prim, world, "run", new Vector3(1, 0, 0), run * 0.5f, midH);
-                AddCentered(handles, inst, prim, world, "width", new Vector3(0, 0, 1), w * 0.5f, midH);
-                // Total rise grows up from the fixed base (y=0), handled at the high (back) end. (Step count not gizmo-editable.)
-                AddFace(handles, inst, prim, world, "totalRise", new Vector3(run * 0.5f, rise, 0), new Vector3(0, 1, 0), 0f);
-                break;
-            }
             case "ramp_plane":
             {
                 float l = GetF(inst, "length", 3f), r = GetF(inst, "rise", 3f), w = GetF(inst, "width", 1.2f), t = GetF(inst, "thickness", 0.2f);
@@ -255,18 +245,6 @@ public static class InstanceHandleProvider
                 AddFace(handles, inst, prim, world, "rise", farP + new Vector3(0, 0.3f, 0), new Vector3(0, 1, 0), 0f);
                 if (straight)
                     AddFace(handles, inst, prim, world, "length", farP, new Vector3(1, 0, 0), 0f);
-                break;
-            }
-            case "stair_plane":
-            {
-                float run = GetF(inst, "run", 3f), rise = GetF(inst, "totalRise", 3f), w = GetF(inst, "width", 1.2f), t = GetF(inst, "thickness", 0.1f);
-                var midH = new Vector3(0, rise * 0.5f, 0);
-                AddCentered(handles, inst, prim, world, "run", new Vector3(1, 0, 0), run * 0.5f, midH);
-                AddCentered(handles, inst, prim, world, "width", new Vector3(0, 0, 1), w * 0.5f, midH);
-                AddFace(handles, inst, prim, world, "totalRise", new Vector3(run * 0.5f, rise, 0), new Vector3(0, 1, 0), 0f);
-                // Thickness grows into the underside (the +X,−Y miter direction) from the fixed top.
-                var into = new Vector3(1, -1, 0).Normalized();
-                AddFace(handles, inst, prim, world, "thickness", midH + into * t, into, 0f);
                 break;
             }
         }

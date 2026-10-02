@@ -36,7 +36,7 @@ The word "level" is overloaded, so the project uses these names:
 
 - **16 parametric primitives**, grouped by category:
   - **Structure** — Floor, Polygon Floor, Circle Plane, Half Circle, Wall, Curved Wall, Cylinder, Edge Curb
-  - **Vertical** — Ramp, Stairs, Ramp Plane, Stair Plane
+  - **Vertical** — Ramp, Ramp Plane
   - **Curves** — Banked Curve, Half-Pipe, Path Sweep, Dome / Bowl
 - **Openings** — doors and windows as selectable, movable, resizable objects. The wall mesh and
   collision honour N openings via box decomposition (not polygon-with-hole). The hole "applies"
@@ -117,9 +117,9 @@ right **inspector**, and a bottom tab bar with **Primitives / Textures / Project
 
 | Key | Tool | Key | Tool |
 |-----|------|-----|------|
-| `S` | Select | `T` | Stairs |
+| `S` | Select | | |
 | `F` | Floor | `G` | Ramp Plane |
-| `W` | Wall | `H` | Stair Plane |
+| `W` | Wall | | |
 | `D` | Door (opening) | `C` | Banked Curve |
 | `N` | Window (opening) | `U` | Half-Pipe |
 | `R` | Ramp | `E` | Edge Curb |
