@@ -170,6 +170,8 @@ public partial class Main : Node3D
             frameSelection: cameraRig.FrameSelection,
             frameAll: cameraRig.FrameAll);
         cameraRig.BoundsProvider = ctx.Bounds; // . / Home framing (and the View menu items)
+        // Hovered-handle highlight. Check Hit: a default (miss) PickResult has HandleIndex 0, not -1.
+        gizmos.HoveredHandle = () => picker.Pick() is { Hit: true, IsHandle: true } p ? p.HandleIndex : -1;
 
         // Intercept window close so unsaved work prompts instead of silently quitting.
         GetTree().AutoAcceptQuit = false;

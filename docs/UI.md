@@ -250,6 +250,15 @@ move handles in top-down view (where a mis-click would silently delete); the poi
 both `points` and `banks` into one `EditPathCommand` (see `DATA_MODEL.md`). `profile` and `closed` are
 plain inspector params (`profile` renders as a dropdown — `ParamSpec.Options` → `OptionButton`).
 
+### Handle widget rendering (`GizmoLayer`)
+Widgets are **screen-constant** (≈14 px visual, ≈24 px grab collider), re-scaled every frame from the
+camera, but each one is capped at a fraction of the distance to its nearest sibling handle (so a path
+point's plan/height/remove widgets never merge or overlap colliders) and floored at the old fixed world
+size (0.16 m / 0.30 m). Each widget = dark outline (no depth test) + translucent "ghost" fill (no depth
+test, shows handles behind geometry) + solid fill (depth-tested) — all transparent-pass so
+`RenderPriority` orders them. The hovered handle (from `InstancePicker`, injected as `HoveredHandle`)
+grows 1.3× and brightens.
+
 ## Conventions for new panels
 
 - Build in code in `Main._Ready`; give each panel a `Setup(...)` called after it's in the tree
