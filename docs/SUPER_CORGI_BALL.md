@@ -17,6 +17,18 @@ game; project at `E:\Projects\Godot\SuperCorgiBall`, branch `level-builder-integ
 | Moving Platform | `M` | `platform` | yaw, width/depth/thickness, moveX/Y/Z (local), period, spin °/s, phase | `Marker3D` + `Mesh` child; `scb_move` (Vector3), `scb_period`, `scb_spin`, `scb_phase` |
 | Bumper | `V` | `bumper` | yaw, radius, height, sides, kick m/s | `Marker3D` + `Mesh` child; `scb_strength` |
 | Conveyor | `Q` | `conveyor` | yaw, width, length, speed m/s | `Marker3D`; `scb_size` (Vector2 w, length), `scb_speed` |
+| Trigger Zone | `H` | `trigger` | yaw, width/depth/height, channel 1-99, once | `Marker3D`; `scb_size` (Vector3 w,h,d), `scb_channel`, `scb_once` (0/1) |
+
+### Motion on any piece (moving walls / doors)
+
+Every non-marker primitive has a **Motion** section in the inspector (`Core/Primitives/Motion.cs`, stored
+as `m_*` params): mode None / Loop / On trigger, slide X/Y/Z (instance-local), rotate axis + angle about a
+hinge point (instance-local), spin °/s (loop), period/travel time, phase, trigger channel, return-after.
+The editor draws a cyan ghost at the end pose and a pink cube on the hinge. A moving piece is **not**
+merged into the static chunk: it bakes as `Marker3D` kind `mover` at its placed pose with its textured
+mesh as a `Mesh` child and `scb_mode/move/axis/angle/hinge/spin/period/phase/channel/return`. The game's
+`Mover.cs` mirrors `Motion.PoseAt` — change both together. Trigger zones fire channels on `BuilderLevel`
+(`ChannelFired`, `FiredChannels`) — also the planned hook for a narrator reacting to the player's route.
 
 Platform and bumper are `GeometryMarkerPrimitive`s: they borrow Floor / Cylinder geometry (textured, with
 material slots) and bake it as a `Mesh` child of their marker (embedded textures on export). Their lowest
