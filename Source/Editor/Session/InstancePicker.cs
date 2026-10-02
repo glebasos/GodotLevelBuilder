@@ -13,13 +13,24 @@ public readonly struct PickResult
     public int HandleIndex { get; }
     public Vector3 Position { get; }
 
-    public PickResult(string instanceId, Vector3 position, string openingId = null)
+    /// <summary>
+    /// Set when an instance sitting inside a doorway (a door panel) won the pick over that opening: the
+    /// opening (and its wall) it shadows, so a repeat click can cycle to it (see SelectTool).
+    /// </summary>
+    public string AltWallId { get; }
+    public string AltOpeningId { get; }
+    public bool HasAltOpening => !string.IsNullOrEmpty(AltOpeningId);
+
+    public PickResult(string instanceId, Vector3 position, string openingId = null,
+                      string altWallId = null, string altOpeningId = null)
     {
         Hit = true;
         InstanceId = instanceId;
         OpeningId = openingId;
         HandleIndex = -1;
         Position = position;
+        AltWallId = altWallId;
+        AltOpeningId = altOpeningId;
     }
 
     private PickResult(int handleIndex)
@@ -29,6 +40,8 @@ public readonly struct PickResult
         OpeningId = null;
         HandleIndex = handleIndex;
         Position = Vector3.Zero;
+        AltWallId = null;
+        AltOpeningId = null;
     }
 
     public static PickResult Handle(int index) => new(index);
@@ -120,12 +133,22 @@ public partial class InstancePicker : Node3D
         // in the opening (a door panel), which must stay selectable. Through an empty doorway the next
         // instance is the floor/wall far behind, so the opening still wins there.
         Godot.Collections.Dictionary hit = bodyHit;
+        string altWall = null, altOpening = null;
         if (openingHit.Count > 0)
         {
             float openingDist = from.DistanceTo(openingHit["position"].AsVector3());
             bool instanceInside = bodyHit.Count > 0
                 && from.DistanceTo(bodyHit["position"].AsVector3()) <= openingDist + OpeningYield;
             if (!instanceInside) hit = openingHit;
+            else
+            {
+                var oc = openingHit["collider"].As<Node>();
+                if (oc != null && oc.HasMeta("openingId"))
+                {
+                    altWall = oc.GetMeta("instanceId").AsString();
+                    altOpening = oc.GetMeta("openingId").AsString();
+                }
+            }
         }
         if (hit.Count == 0) return default;
 
@@ -133,6 +156,7 @@ public partial class InstancePicker : Node3D
         if (collider == null || !collider.HasMeta("instanceId")) return default;
 
         string openingId = collider.HasMeta("openingId") ? collider.GetMeta("openingId").AsString() : null;
-        return new PickResult(collider.GetMeta("instanceId").AsString(), hit["position"].AsVector3(), openingId);
+        return new PickResult(collider.GetMeta("instanceId").AsString(), hit["position"].AsVector3(), openingId,
+                              altWall, altOpening);
     }
 }

@@ -343,6 +343,12 @@ public partial class InspectorPanel : PanelContainer
         OpeningRow("Width", OField.Width, 0.01f);
         OpeningRow("Height", OField.Height, 0.01f);
         OpeningRow("Sill", OField.Sill, 0f);
+
+        // Super Corgi Ball: one click to put a swinging door in this opening (a separate moving wall).
+        string wallId = _ctx.SelectedId, openingId = _ctx.SelectedOpeningId;
+        _propsBox.AddChild(UiFactory.MakeButton("Add door panel", () => _ctx.AddDoorPanel(wallId, openingId),
+            tooltip: "Fill this opening with a door: a thin wall set to swing open when trigger channel 1 fires. "
+                   + "Click the doorway again to cycle between the panel and the opening."));
     }
 
     private void OpeningRow(string label, OField which, float min)

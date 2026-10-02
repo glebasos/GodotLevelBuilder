@@ -58,6 +58,13 @@ public sealed class SelectTool : ITool
 
         if (!r.Hit) { if (!ctrl) _ctx.ClearSelection(); return; } // Ctrl+click on empty keeps the current set
 
+        // A piece inside a doorway (door panel) shadows the opening around it: clicking the already-selected
+        // panel again cycles to the opening (and the opening's next click back to the panel, via the
+        // normal path below, since the panel wins the pick).
+        if (!ctrl && r.HasAltOpening && _ctx.SelectedOpeningId == null
+            && _ctx.SelectedIds.Count == 1 && _ctx.IsSelected(r.InstanceId))
+            r = new PickResult(r.AltWallId, r.Position, r.AltOpeningId);
+
         if (r.IsOpening)
         {
             // Openings are single-select; Ctrl is ignored (multi-select is instances-only).

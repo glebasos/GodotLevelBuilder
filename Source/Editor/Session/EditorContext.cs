@@ -235,6 +235,48 @@ public sealed class EditorContext
     /// <summary>Nudges the draw plane by <paramref name="steps"/> × the document's height step.</summary>
     public void NudgeDrawHeight(int steps) => SetDrawHeight(_drawHeight + steps * Document.Grid.HeightStep);
 
+    /// <summary>
+    /// Super Corgi Ball: fills an opening with a door panel — a thin wall exactly the opening's size, in the
+    /// wall's storey, pre-set to swing open (On trigger, channel 1, hinged on its −X edge, 100°). Undoable;
+    /// selects the new panel so its Motion values can be tuned straight away.
+    /// </summary>
+    public void AddDoorPanel(string wallId, string openingId)
+    {
+        PrimitiveInstanceData wall = GetInstance(wallId);
+        OpeningData opening = null;
+        if (wall != null)
+            foreach (OpeningData o in wall.Openings)
+                if (o.Id == openingId) opening = o;
+        if (opening == null) return;
+
+        float length = wall.Parameters.ContainsKey("length") ? wall.Parameters["length"].AsSingle() : 1f;
+        float thickness = wall.Parameters.ContainsKey("thickness") ? wall.Parameters["thickness"].AsSingle() : 0.2f;
+        float centreX = opening.Offset + opening.Width * 0.5f - length * 0.5f;
+
+        var panel = new PrimitiveInstanceData
+        {
+            Id = Ids.New(),
+            PrimitiveType = "wall",
+            // Wall origin is its base centre: sit the panel's base on the sill, centred in the opening.
+            LocalTransform = wall.LocalTransform * new Transform3D(Basis.Identity, new Vector3(centreX, opening.SillHeight, 0)),
+            Parameters = new Godot.Collections.Dictionary
+            {
+                { "length", (double)opening.Width },
+                { "height", (double)opening.Height },
+                { "thickness", (double)Mathf.Max(0.05f, thickness * 0.5f) },
+                { "m_mode", Motion.Triggered },
+                { "m_angle", 100.0 },
+                { "m_hingeX", (double)(-opening.Width * 0.5f) },
+                { "m_period", 1.2 },
+                { "m_channel", 1 },
+            },
+        };
+        DefaultMaterials.ApplyDefaults(panel);
+        float elevation = OffsetOfInstance(wallId).Y;
+        Commands.Execute(new AddInstanceCommand(Document, elevation, Document.DefaultStoreyHeight, panel, Refresh));
+        Select(panel.Id);
+    }
+
     /// <summary>World offset of the storey that OWNS <paramref name="id"/> — not necessarily the active one.</summary>
     public Vector3 OffsetOfInstance(string id)
     {
