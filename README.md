@@ -120,6 +120,7 @@ right **inspector**, and a bottom tab bar with **Primitives / Textures / Project
 | `S` | Select | `T` | Start (ball spawn) |
 | `F` | Floor | `G` | Ramp Plane |
 | `W` | Wall | `X` / `B` | Goal gate / Bone |
+| `M` | Moving platform | `V` / `Q` | Bumper / Conveyor |
 | `D` | Door (opening) | `C` | Banked Curve |
 | `N` | Window (opening) | `U` | Half-Pipe |
 | `R` | Ramp | `E` | Edge Curb |

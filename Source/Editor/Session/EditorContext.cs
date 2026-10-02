@@ -885,7 +885,7 @@ public sealed class EditorContext
     {
         if (!RequireWorkspaceForBake()) return;
         if (!HasStartMarker())
-            Notified?.Invoke(NotifyLevel.Warning, "No Start placed — the game will refuse this level.");
+            Notified?.Invoke(NotifyLevel.Warning, "No Start placed — the ball won't know where to spawn in this level.");
 
         EnsureDir(Workspace.SharedDir);
         string path = $"{Workspace.SharedDir}/{FileStem()}.{PlayerLevelExporter.Extension}";
