@@ -32,6 +32,9 @@ public partial class HelpOverlay : Control
         ("T", "Start (ball spawn)"),
         ("X", "Goal gate"),
         ("B", "Bone collectible"),
+        ("M", "Moving platform"),
+        ("V", "Bumper"),
+        ("Q", "Conveyor"),
     };
 
     private static readonly (string Keys, string Action)[] Commands =

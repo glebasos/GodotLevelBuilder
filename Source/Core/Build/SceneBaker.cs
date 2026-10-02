@@ -98,7 +98,7 @@ public sealed class SceneBaker
             }
         }
 
-        AddMarkers(root, doc, minY);
+        AddMarkers(root, doc, minY, materials, embedTextures);
         return root;
     }
 
@@ -217,7 +217,7 @@ public sealed class SceneBaker
 
         float minY = float.PositiveInfinity;
         foreach (Vector3 v in collisionFaces) minY = Mathf.Min(minY, v.Y);
-        AddMarkers(root, doc, minY);
+        AddMarkers(root, doc, minY, materials, embedTextures);
         return root;
     }
 
@@ -229,7 +229,7 @@ public sealed class SceneBaker
     /// ball has fallen off: the lowest geometry minus the Start's fall-out depth). Omitted when the level
     /// has no markers, so plain geometry bakes are unchanged. See docs/SUPER_CORGI_BALL.md.
     /// </summary>
-    private void AddMarkers(Node3D root, LevelDocument doc, float geometryMinY)
+    private void AddMarkers(Node3D root, LevelDocument doc, float geometryMinY, MaterialResolver materials, bool embedTextures)
     {
         var markers = new Node3D { Name = "Markers" };
         int spawns = 0;
@@ -238,6 +238,7 @@ public sealed class SceneBaker
         foreach (StoreyData storey in doc.Storeys)
         {
             var storeyXform = new Transform3D(Basis.Identity, new Vector3(0, storey.BaseElevation, 0));
+            var ctx = new BuildContext { Materials = doc.Materials, CellSize = doc.Grid.CellSize, StoreyHeight = storey.Height };
             foreach (PrimitiveInstanceData inst in storey.Instances.OrderBy(i => i.Id))
             {
                 if (_registry.Get(inst.PrimitiveType) is not MarkerPrimitive marker) continue;
@@ -251,6 +252,19 @@ public sealed class SceneBaker
                 foreach ((string key, Variant value) in marker.BakeMeta(inst))
                     node.SetMeta($"scb_{key}", value);
                 markers.AddChild(node);
+
+                // Geometry-carrying markers (platform, bumper): the real mesh rides along as a "Mesh" child,
+                // textured like any baked geometry (embedded for export). Its lowest point — at both ends of
+                // a platform's travel — counts toward the fall-out height, or riding it down would "fall out".
+                ArrayMesh bakeMesh = marker.BuildBakeMesh(inst, ctx);
+                if (bakeMesh != null)
+                {
+                    materials.AssignSurfaceMaterials(bakeMesh, marker, inst, doc.Materials, embedTextures);
+                    node.AddChild(new MeshInstance3D { Name = "Mesh", Mesh = bakeMesh });
+                    Transform3D at = node.Transform;
+                    Transform3D atEnd = at * new Transform3D(Basis.Identity, marker.TravelOffset(inst));
+                    geometryMinY = Mathf.Min(geometryMinY, Mathf.Min(MinY(bakeMesh, Vector3.Zero, at), MinY(bakeMesh, Vector3.Zero, atEnd)));
+                }
 
                 if (marker is SpawnMarkerPrimitive)
                 {

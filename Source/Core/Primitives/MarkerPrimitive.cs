@@ -26,8 +26,9 @@ public abstract class MarkerPrimitive : IPrimitive
 
     public abstract IReadOnlyList<ParamSpec> Parameters { get; }
 
-    /// <summary>No material slots: the proxy colours itself and never reaches the baked scene.</summary>
-    public IReadOnlyList<string> MaterialSlots { get; } = System.Array.Empty<string>();
+    /// <summary>None by default: the proxy colours itself and never reaches the baked scene. Markers that
+    /// bake real geometry (<see cref="GeometryMarkerPrimitive"/>) expose their shape's slots.</summary>
+    public virtual IReadOnlyList<string> MaterialSlots { get; } = System.Array.Empty<string>();
 
     /// <summary>Proxy colour in the editor viewport.</summary>
     protected abstract Color ProxyColor { get; }
@@ -51,7 +52,17 @@ public abstract class MarkerPrimitive : IPrimitive
         yield break;
     }
 
-    public ArrayMesh BuildMesh(PrimitiveInstanceData data, BuildContext ctx)
+    /// <summary>
+    /// Real geometry baked as a <c>Mesh</c> child of the Marker3D (in marker-local space, i.e. without
+    /// <see cref="MarkerLocal"/>; surface i ↔ <see cref="MaterialSlots"/>[i]), or null for a pure marker.
+    /// The game builds the body/collision from it (moving platform, bumper…).
+    /// </summary>
+    public virtual ArrayMesh BuildBakeMesh(PrimitiveInstanceData data, BuildContext ctx) => null;
+
+    /// <summary>Marker-local offset the baked mesh travels to (moving platforms) — counted for the fall-out height.</summary>
+    public virtual Vector3 TravelOffset(PrimitiveInstanceData data) => Vector3.Zero;
+
+    public virtual ArrayMesh BuildMesh(PrimitiveInstanceData data, BuildContext ctx)
     {
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
@@ -69,7 +80,7 @@ public abstract class MarkerPrimitive : IPrimitive
         return mesh;
     }
 
-    public Shape3D[] BuildCollision(PrimitiveInstanceData data, BuildContext ctx)
+    public virtual Shape3D[] BuildCollision(PrimitiveInstanceData data, BuildContext ctx)
     {
         (Vector3 size, Vector3 centre) = PickBox(data);
         Transform3D local = MarkerLocal(data);
@@ -100,13 +111,17 @@ public abstract class MarkerPrimitive : IPrimitive
         AddBox(st, new Vector3(-head, y, -length), new Vector3(head, y + 0.06f, -length + head));
     }
 
-    private static ArrayMesh Transformed(ArrayMesh source, Transform3D xform)
+    /// <summary>Copy of every surface of <paramref name="source"/> moved by <paramref name="xform"/> (normals/tangents too).</summary>
+    protected static ArrayMesh Transformed(ArrayMesh source, Transform3D xform)
     {
-        var st = new SurfaceTool();
-        st.Begin(Mesh.PrimitiveType.Triangles);
-        st.AppendFrom(source, 0, xform);
         var mesh = new ArrayMesh();
-        st.Commit(mesh);
+        for (int i = 0; i < source.GetSurfaceCount(); i++)
+        {
+            var st = new SurfaceTool();
+            st.Begin(Mesh.PrimitiveType.Triangles);
+            st.AppendFrom(source, i, xform);
+            st.Commit(mesh);
+        }
         return mesh;
     }
 

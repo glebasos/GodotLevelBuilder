@@ -37,6 +37,9 @@ public sealed class PrimitiveRegistry
         registry.Register(new SpawnMarkerPrimitive());
         registry.Register(new GoalMarkerPrimitive());
         registry.Register(new BoneMarkerPrimitive());
+        registry.Register(new PlatformMarkerPrimitive());
+        registry.Register(new BumperMarkerPrimitive());
+        registry.Register(new ConveyorMarkerPrimitive());
         return registry;
     }
 }
