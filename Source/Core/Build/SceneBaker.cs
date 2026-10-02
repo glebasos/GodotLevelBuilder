@@ -34,6 +34,7 @@ public sealed class SceneBaker
         var materials = new MaterialResolver();
 
         var root = new Node3D { Name = SanitizeName(doc.Name) };
+        float minY = float.PositiveInfinity;
 
         foreach (StoreyData storey in doc.Storeys)
         {
@@ -63,9 +64,11 @@ public sealed class SceneBaker
                     GD.PushWarning($"SceneBaker: unknown primitive '{inst.PrimitiveType}' (instance {inst.Id}) — skipped.");
                     continue;
                 }
+                if (prim is MarkerPrimitive) continue; // gameplay markers bake as Marker3D below, not geometry
 
                 ArrayMesh mesh = prim.BuildMesh(inst, ctx);
                 materials.AssignSurfaceMaterials(mesh, prim, inst, doc.Materials, embedTextures);
+                minY = Mathf.Min(minY, MinY(mesh, storeyNode.Position, inst.LocalTransform));
 
                 // Prefix with the primitive type (Floor_, Wall_, …) so the baked tree is readable
                 // instead of an opaque Mesh_<id>. The <id> stays in the name to keep it unique,
@@ -95,6 +98,7 @@ public sealed class SceneBaker
             }
         }
 
+        AddMarkers(root, doc, minY);
         return root;
     }
 
@@ -159,6 +163,8 @@ public sealed class SceneBaker
                     continue;
                 }
 
+                if (prim is MarkerPrimitive) continue; // gameplay markers bake as Marker3D below, not geometry
+
                 ArrayMesh mesh = prim.BuildMesh(inst, ctx);
                 Transform3D world = storeyXform * inst.LocalTransform;
 
@@ -209,8 +215,79 @@ public sealed class SceneBaker
             root.AddChild(body);
         }
 
+        float minY = float.PositiveInfinity;
+        foreach (Vector3 v in collisionFaces) minY = Mathf.Min(minY, v.Y);
+        AddMarkers(root, doc, minY);
         return root;
     }
+
+    /// <summary>
+    /// Emits the gameplay markers (Super Corgi Ball) under a <c>Markers</c> node: one <see cref="Marker3D"/>
+    /// per marker instance, named <c>{Type}_{id}</c> (stable, like geometry), tagged <c>scb_kind</c> plus the
+    /// marker's own <c>scb_*</c> values. Level-wide settings ride on the <c>Markers</c> node itself:
+    /// <c>scb_time_limit</c> (s, 0 = game default) and <c>scb_fall_out_y</c> (level-local Y below which the
+    /// ball has fallen off: the lowest geometry minus the Start's fall-out depth). Omitted when the level
+    /// has no markers, so plain geometry bakes are unchanged. See docs/SUPER_CORGI_BALL.md.
+    /// </summary>
+    private void AddMarkers(Node3D root, LevelDocument doc, float geometryMinY)
+    {
+        var markers = new Node3D { Name = "Markers" };
+        int spawns = 0;
+        float timeLimit = 0f, fallDepth = 10f;
+
+        foreach (StoreyData storey in doc.Storeys)
+        {
+            var storeyXform = new Transform3D(Basis.Identity, new Vector3(0, storey.BaseElevation, 0));
+            foreach (PrimitiveInstanceData inst in storey.Instances.OrderBy(i => i.Id))
+            {
+                if (_registry.Get(inst.PrimitiveType) is not MarkerPrimitive marker) continue;
+
+                var node = new Marker3D
+                {
+                    Name = $"{TypeName(inst.PrimitiveType)}_{inst.Id}",
+                    Transform = storeyXform * inst.LocalTransform * marker.MarkerLocal(inst),
+                };
+                node.SetMeta("scb_kind", marker.MarkerKind);
+                foreach ((string key, Variant value) in marker.BakeMeta(inst))
+                    node.SetMeta($"scb_{key}", value);
+                markers.AddChild(node);
+
+                if (marker is SpawnMarkerPrimitive)
+                {
+                    spawns++;
+                    timeLimit = GetF(inst, "timeLimit", 60f);
+                    fallDepth = GetF(inst, "fallDepth", 10f);
+                }
+            }
+        }
+
+        if (markers.GetChildCount() == 0)
+        {
+            markers.Free();
+            return;
+        }
+
+        if (spawns != 1)
+            GD.PushWarning($"SceneBaker: level '{doc.Name}' has {spawns} Start markers — it needs exactly one.");
+
+        float baseY = float.IsPositiveInfinity(geometryMinY) ? 0f : geometryMinY;
+        markers.SetMeta("scb_time_limit", timeLimit);
+        markers.SetMeta("scb_fall_out_y", baseY - fallDepth);
+        root.AddChild(markers);
+    }
+
+    /// <summary>Lowest Y of a mesh's AABB corners once placed (storey offset + instance transform).</summary>
+    private static float MinY(ArrayMesh mesh, Vector3 storeyOffset, Transform3D local)
+    {
+        Aabb box = mesh.GetAabb();
+        float min = float.PositiveInfinity;
+        for (int i = 0; i < 8; i++)
+            min = Mathf.Min(min, (local * box.GetEndpoint(i)).Y + storeyOffset.Y);
+        return min;
+    }
+
+    private static float GetF(PrimitiveInstanceData d, string key, float def)
+        => d.Parameters.ContainsKey(key) ? d.Parameters[key].AsSingle() : def;
 
     /// <summary>Merge-bakes and writes a .tscn to <paramref name="path"/>. Returns the save Error.</summary>
     public Error BakeMergedToFile(LevelDocument doc, string path, bool embedTextures = false)

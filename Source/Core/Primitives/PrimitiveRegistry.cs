@@ -33,6 +33,10 @@ public sealed class PrimitiveRegistry
         registry.Register(new CurvedWallPrimitive());
         registry.Register(new DomePrimitive());
         registry.Register(new PathSweepPrimitive());
+        // Super Corgi Ball gameplay markers (baked as Marker3D, not geometry).
+        registry.Register(new SpawnMarkerPrimitive());
+        registry.Register(new GoalMarkerPrimitive());
+        registry.Register(new BoneMarkerPrimitive());
         return registry;
     }
 }

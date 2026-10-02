@@ -49,6 +49,9 @@ public partial class ToolManager : Node
         var pathSweep = new PathSweepDrawTool();
         var door = new OpeningTool(OpeningPreset.Door);
         var window = new OpeningTool(OpeningPreset.Window);
+        var spawn = new MarkerPlaceTool("spawn", "Start");
+        var goal = new MarkerPlaceTool("goal", "Goal");
+        var bone = new MarkerPlaceTool("bone", "Bone");
 
         _tools = new Dictionary<Key, ITool>
         {
@@ -70,6 +73,9 @@ public partial class ToolManager : Node
             { Key.A, curvedWall },
             { Key.O, dome },
             { Key.P, pathSweep },
+            { Key.T, spawn },
+            { Key.X, goal },
+            { Key.B, bone },
         };
 
         _toolsById = new Dictionary<string, ITool>
@@ -92,6 +98,9 @@ public partial class ToolManager : Node
             { "path_sweep", pathSweep },
             { "door", door },
             { "window", window },
+            { "spawn", spawn },
+            { "goal", goal },
+            { "bone", bone },
         };
         _idByTool = new Dictionary<ITool, string>();
         foreach (var (id, tool) in _toolsById) _idByTool[tool] = id;
@@ -133,6 +142,9 @@ public partial class ToolManager : Node
         { "wall", "Click corners to chain walls · Esc/RMB to stop the chain" },
         { "door", "Click a wall to place a door" },
         { "window", "Click a wall to place a window" },
+        { "spawn", "Click to place the ball start (one per level) · facing, drop height, time limit in the inspector" },
+        { "goal", "Click to place a goal gate · set its facing in the inspector" },
+        { "bone", "Click to drop bones (stays active for more) · height in the inspector" },
         { "ramp", "Click the bottom end, then the top end" },
         { "ramp_plane", "Click the bottom end, then the top end" },
         { "banked_curve", "Click the entry corner, then the heading (distance = radius); curves left" },

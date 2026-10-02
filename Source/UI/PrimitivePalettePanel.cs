@@ -36,7 +36,7 @@ public partial class PrimitivePalettePanel : MarginContainer
     // Lower sorts first; unknown categories fall to the end but keep a stable alphabetical order.
     private static readonly Dictionary<string, int> CategoryOrder = new()
     {
-        { "Tools", -1 }, { "Structure", 0 }, { "Openings", 1 }, { "Vertical", 2 }, { "Curves", 3 },
+        { "Tools", -1 }, { "Structure", 0 }, { "Openings", 1 }, { "Vertical", 2 }, { "Curves", 3 }, { "Gameplay", 4 },
     };
 
     private ToolManager _tools;

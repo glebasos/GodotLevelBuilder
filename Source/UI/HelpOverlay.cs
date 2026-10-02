@@ -29,6 +29,9 @@ public partial class HelpOverlay : Control
         ("A", "Curved (arc) wall"),
         ("O", "Dome / bowl"),
         ("P", "Path sweep"),
+        ("T", "Start (ball spawn)"),
+        ("X", "Goal gate"),
+        ("B", "Bone collectible"),
     };
 
     private static readonly (string Keys, string Action)[] Commands =

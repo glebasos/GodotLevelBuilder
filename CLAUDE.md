@@ -80,3 +80,4 @@ docs/             design docs (see below)
 - `docs/UI.md` — editor shell layout, panels, the SubViewport, and the drag-drop/texture gotchas.
 - `docs/ROADMAP.md` — milestones, starting with the thin end-to-end slice.
 - `docs/CONVENTIONS.md` — C#/Godot coding conventions.
+- `docs/SUPER_CORGI_BALL.md` — **this branch**: gameplay markers (Start/Goal/Bone), the baked `Markers` contract shared with the Super Corgi Ball game.
